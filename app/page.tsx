@@ -220,8 +220,15 @@ const DailyStaffOverview = () => {
   // IDs of staff on leave
   const offIds = new Set(leaves.map(l => l.employeeId));
 
-  // Working staff = ALL shifts (Bao gồm cả những người xin OFF nhưng vẫn đi làm)
-  const workingShifts = shifts;
+  // Working staff logic:
+  // Nếu KTV xin OFF -> Chỉ hiển thị nếu họ điểm danh 'Ca tự do' (FREE) hoặc 'Khách yêu cầu' (REQUEST)
+  // Ngược lại (Ca 1,2,3) thì không hiển thị.
+  const workingShifts = shifts.filter(s => {
+    if (offIds.has(s.employeeId)) {
+      return s.shiftType === 'FREE' || s.shiftType === 'REQUEST';
+    }
+    return true;
+  });
 
   // Group by shift type
   const shiftGroups: Record<string, ShiftItem[]> = {};
@@ -385,20 +392,18 @@ const DailyStaffOverview = () => {
                         {group.map(staff => (
                           <div
                             key={staff.employeeId}
-                            className={`rounded-lg border ${display.border} bg-white/60 px-3 py-2 text-center flex flex-col items-center justify-center`}
+                            className={`relative rounded-lg border ${display.border} bg-white/60 px-3 py-2 text-center flex flex-col items-center justify-center`}
                           >
-                            <div className="flex items-center gap-1 justify-center">
-                              <p className={`text-sm font-bold ${display.color}`}>
-                                {staff.employeeId}
-                              </p>
-                              {offIds.has(staff.employeeId) && (
-                                <span className={`text-[8px] font-black px-1 py-0.5 rounded uppercase ${leaves.find(l => l.employeeId === staff.employeeId)?.is_sudden_off ? 'bg-red-100 text-red-600' : 'bg-rose-100 text-rose-600'}`}>
-                                  {leaves.find(l => l.employeeId === staff.employeeId)?.is_sudden_off ? 'Đột xuất' : 'OFF'}
-                                </span>
-                              )}
-                            </div>
+                            {offIds.has(staff.employeeId) && (
+                              <span className={`absolute -top-1.5 -right-1.5 text-[7px] font-black px-1 py-0.5 rounded uppercase shadow-sm ${leaves.find(l => l.employeeId === staff.employeeId)?.is_sudden_off ? 'bg-red-500 text-white' : 'bg-rose-500 text-white'}`}>
+                                {leaves.find(l => l.employeeId === staff.employeeId)?.is_sudden_off ? 'Đột xuất' : 'OFF'}
+                              </span>
+                            )}
+                            <p className={`text-sm font-bold ${display.color}`}>
+                              {staff.employeeId}
+                            </p>
                             {shiftKey === 'FREE' && staff.estimatedEndTime && (
-                              <span className="text-[9px] font-bold text-teal-600 bg-teal-50 border border-teal-100 px-1.5 py-0.5 rounded shadow-sm mt-1 w-full max-w-[80px]">
+                              <span className="text-[9px] font-bold text-teal-600 bg-teal-50 border border-teal-100 px-1.5 py-0.5 rounded shadow-sm mt-1 whitespace-nowrap">
                                 Về: {staff.estimatedEndTime}
                               </span>
                             )}

@@ -333,8 +333,13 @@ const KTVAttendancePage = () => {
                                         <p className="font-bold text-emerald-700 text-lg">{t.confirmedTitle}</p>
                                         <p className="text-sm text-gray-500">{t.confirmedDesc}</p>
                                         {currentRecord?.checkedAt && (
-                                            <p className="text-xs text-gray-400">
+                                            <p className="text-xs text-gray-400 mt-1">
                                                 {t.shiftStart(format(new Date(currentRecord.checkedAt), 'HH:mm — dd/MM/yyyy'))}
+                                            </p>
+                                        )}
+                                        {activeShiftType === 'FREE' && currentRecord?.estimatedEndTime && (
+                                            <p className="text-[13px] font-bold text-teal-600 mt-1.5">
+                                                Giờ về dự kiến: {currentRecord.estimatedEndTime}
                                             </p>
                                         )}
                                     </div>
@@ -360,6 +365,22 @@ const KTVAttendancePage = () => {
                                                 }
                                                 isEarly = true;
                                             }
+
+                                            // Thông báo nhắc nhở riêng cho Ca Tự Do nếu về sớm hơn giờ dự kiến
+                                            if (activeShiftType === 'FREE' && currentRecord?.estimatedEndTime) {
+                                                const vnNow = new Date(Date.now() + 7 * 60 * 60 * 1000);
+                                                const [estH, estM] = currentRecord.estimatedEndTime.split(':').map(Number);
+                                                
+                                                const estDate = new Date(vnNow);
+                                                estDate.setUTCHours(estH, estM, 0, 0); 
+                                                
+                                                if (vnNow.getTime() < estDate.getTime()) {
+                                                    if (!window.confirm(`⚠️ Bạn đang tan ca sớm hơn giờ dự kiến (${currentRecord.estimatedEndTime}).\n\nVui lòng thông báo cho lễ tân biết để sắp xếp khách nhé!\n\nNhấn OK để tiếp tục tan ca.`)) {
+                                                        return;
+                                                    }
+                                                }
+                                            }
+
                                             openForm('CHECK_OUT', isEarly);
                                         }}
                                         disabled={isLoadingShift || (!allowEarlyCheckout && !canCheckOut)}

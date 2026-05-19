@@ -37,6 +37,7 @@ export interface AttendanceRecord {
     longitude: number | null;
     locationText: string | null;
     checkedAt: string;
+    estimatedEndTime?: string | null;
 }
 
 /**
@@ -304,7 +305,7 @@ export const useKTVAttendance = () => {
     const { canCheckOut, checkoutBlockedUntil } = (() => {
         if (!activeShiftType || isLoadingShift) return { canCheckOut: true, checkoutBlockedUntil: null };
 
-        // Ca tự do và Khách yêu cầu thì luôn cho phép về
+        // Ca tự do và Khách yêu cầu thì luôn cho phép về thẳng (không block, không tính đột xuất)
         if (activeShiftType === 'FREE' || activeShiftType === 'REQUEST') {
             return { canCheckOut: true, checkoutBlockedUntil: null };
         }
