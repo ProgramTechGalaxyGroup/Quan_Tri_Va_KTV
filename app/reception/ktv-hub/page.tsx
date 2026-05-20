@@ -144,8 +144,8 @@ const AttendancePendingSection = () => {
 
     React.useEffect(() => {
         fetchPending();
-        const interval = setInterval(fetchPending, 15000);
-        return () => clearInterval(interval);
+        // 🔧 EGRESS FIX: Removed 15s polling — Realtime on KTVAttendance already handles live updates.
+        // fetchPending() is also called via Realtime triggers in the parent TurnTab component.
     }, [fetchPending]);
 
     const handleAction = async (id: string, action: 'CONFIRM' | 'REJECT') => {
@@ -303,8 +303,8 @@ const AttendanceHistorySection = () => {
 
     React.useEffect(() => {
         fetchHistory();
-        const interval = setInterval(fetchHistory, 30000); // Poll every 30s
-        return () => clearInterval(interval);
+        // 🔧 EGRESS FIX: Removed 30s polling — Realtime handles updates.
+        // History data rarely changes (only after confirm/reject actions, which trigger state updates).
     }, [fetchHistory]);
 
     if (records.length === 0) return null;
@@ -535,7 +535,8 @@ const TurnTab = ({ staffs }: { staffs: StaffData[] }) => {
         const today = selectedDate;
         const { data } = await supabase
             .from('TurnQueue')
-            .select('*')
+            // 🔧 EGRESS FIX: Select only needed columns
+            .select('id, employee_id, date, check_in_order, queue_position, status, turns_completed, current_order_id')
             .eq('date', today)
             .order('turns_completed', { ascending: true })
             .order('queue_position', { ascending: true });

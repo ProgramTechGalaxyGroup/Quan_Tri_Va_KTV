@@ -37,7 +37,9 @@ export function useFinanceKTV() {
 
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchData, 15000);
+        // 🔧 EGRESS FIX: Finance page doesn't need real-time refresh
+        // Reduced from 15s to 5 minutes. Data also refreshes after approve/reject/adjust actions.
+        const interval = setInterval(fetchData, 300000);
         return () => clearInterval(interval);
     }, [fetchData]);
 

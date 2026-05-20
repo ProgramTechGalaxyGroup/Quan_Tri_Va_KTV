@@ -332,16 +332,10 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
-        // 💓 HEARTBEAT: Ping Supabase every 30s to keep the connection alive
-        const heartbeat = setInterval(() => {
-            if (document.visibilityState === 'visible') {
-                supabase.channel('heartbeat_ping').subscribe((status) => {
-                    if (status === 'SUBSCRIBED') {
-                        supabase.removeChannel(supabase.channel('heartbeat_ping'));
-                    }
-                });
-            }
-        }, 30_000);
+        // 💓 HEARTBEAT: Removed — Supabase client handles WebSocket keepalive internally.
+        // The visibilitychange handler above already reconnects when tab becomes active.
+        // Old pattern (supabase.channel('heartbeat_ping').subscribe()) was creating/destroying
+        // a channel every 30s, causing unnecessary egress overhead.
 
         // 📲 Register Periodic Sync for SW keep-alive (if supported)
         if ('serviceWorker' in navigator && 'periodicSync' in (navigator as unknown as Record<string, unknown>)) {
@@ -355,7 +349,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
-            clearInterval(heartbeat);
             supabase.removeChannel(channel);
         };
     }, [user, role]);

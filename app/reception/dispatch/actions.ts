@@ -12,13 +12,14 @@ export async function getDispatchData(date: string) {
         const supabase = getSupabaseAdmin();
         if (!supabase) throw new Error('Supabase admin not initialized');
 
-        // 1. Fetch Staff
-        const { data: staffs, error: sError } = await supabase.from('Staff').select('*');
+        // 1. Fetch Staff — 🔧 EGRESS FIX: Only select needed columns
+        const { data: staffs, error: sError } = await supabase.from('Staff').select('id, full_name, code, avatar_url, gender, is_active');
         if (sError) throw sError;
 
+        // 🔧 EGRESS FIX: Only select needed columns for TurnQueue
         const { data: turns, error: tError } = await supabase
             .from('TurnQueue')
-            .select('*')
+            .select('id, employee_id, date, check_in_order, queue_position, status, turns_completed, current_order_id, booking_item_id, booking_item_ids, room_id, bed_id, start_time, estimated_end_time')
             .eq('date', date)
             .order('turns_completed', { ascending: true })
             .order('queue_position', { ascending: true });
@@ -29,9 +30,10 @@ export async function getDispatchData(date: string) {
         const startOfDay = `${date} 00:00:00`;
         const endOfDay = `${date} 23:59:59`;
 
+        // 🔧 EGRESS FIX: Only select needed columns for Bookings
         const { data: bData, error: bError } = await supabase
             .from('Bookings')
-            .select('*')
+            .select('id, billCode, customerName, customerLang, customerPhone, timeBooking, bookingDate, createdAt, updatedAt, status, totalAmount, paymentMethod, technicianCode, bedId, roomName, notes, accessToken, rating, feedbackNote, focusAreaNote, timeStart, timeEnd')
             .gte('bookingDate', startOfDay)
             .lte('bookingDate', endOfDay)
             .neq('status', 'CANCELLED')
@@ -156,11 +158,11 @@ export async function getDispatchData(date: string) {
             }
         });
 
-        // 6. Fetch Rooms, Beds, and Reminders
-        const { data: rooms } = await supabase.from('Rooms').select('*');
-        const { data: beds } = await supabase.from('Beds').select('*');
-        const { data: reminders } = await supabase.from('Reminders').select('*').eq('is_active', true).order('order_index', { ascending: true });
-        const { data: configs } = await supabase.from('SystemConfigs').select('*');
+        // 6. Fetch Rooms, Beds, and Reminders — 🔧 EGRESS FIX: select specific columns
+        const { data: rooms } = await supabase.from('Rooms').select('id, name, floor, status, capacity');
+        const { data: beds } = await supabase.from('Beds').select('id, name, roomId, status');
+        const { data: reminders } = await supabase.from('Reminders').select('id, text, order_index, is_active').eq('is_active', true).order('order_index', { ascending: true });
+        const { data: configs } = await supabase.from('SystemConfigs').select('key, value');
 
         const transitionConfig = configs?.find((c: any) => c.key === 'room_transition_time' || c.key === 'thoi_gian_doi_phong');
         const roomTransitionTime = transitionConfig ? (parseInt(transitionConfig.value, 10) || 1) : 1;
