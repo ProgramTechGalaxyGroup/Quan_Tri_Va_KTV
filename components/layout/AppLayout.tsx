@@ -37,8 +37,8 @@ export function AppLayout({ children, hideAI = false, title = 'Ngân Hà Spa', d
 
   if (!mounted || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-indigo-600 font-medium">Đang tải...</div>
+      <div suppressHydrationWarning className="min-h-screen flex items-center justify-center bg-white">
+        <div suppressHydrationWarning className="text-indigo-600 font-medium">Đang tải...</div>
       </div>
     );
   }
