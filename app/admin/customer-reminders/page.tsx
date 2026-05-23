@@ -89,7 +89,7 @@ export default function CustomerRemindersPage() {
     };
 
     return (
-        <AppLayout title="Câu Hỏi Khảo Sát" moduleId="customer_reminders">
+        <AppLayout title="Câu Hỏi Khảo Sát">
             <div className="p-6 max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
                 <div>

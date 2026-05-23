@@ -428,9 +428,8 @@ export default function DispatchBoardPage() {
               feedbackNote: b.feedbackNote || null,
               vipWarnings: b.notes && typeof b.notes === 'string' && b.notes.trim().startsWith('{') ? (() => { try { const p = JSON.parse(b.notes); return p.type === 'VIP_APPOINTMENT' ? p.warnings : []; } catch { return []; } })() : [],
               vipConfidence: b.notes && typeof b.notes === 'string' && b.notes.trim().startsWith('{') ? (() => { try { const p = JSON.parse(b.notes); return p.type === 'VIP_APPOINTMENT' ? p.confidence : undefined; } catch { return undefined; } })() : undefined,
-            timeStart: b.timeStart || null,
-            customerLang: b.customerLang,
-            rawNotes: b.notes,
+              timeStart: b.timeStart || null,
+              rawNotes: b.notes,
             services: (b.BookingItems || []).map((bi: any) => {
               const itemTurns = assignedTurns.filter((t: any) => {
                   if (!t.booking_item_id) return false;
