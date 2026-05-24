@@ -38,10 +38,10 @@
 ---
 
 ## 3. CHECKLIST TRƯỚC NGÀY 22/5 (MANDATORY)
-1. [ ] Công thức pricing có lợi nhuận.
-2. [ ] Database nhân viên complete (không missing field).
-3. [ ] API lịch ca/tua stable.
-4. [ ] UI responsive trên mobile (ưu tiên).
+1. [x] Công thức pricing có lợi nhuận.
+2. [x] Database nhân viên complete (không missing field).
+3. [x] API lịch ca/tua stable (Đã phân loại chi tiết NOT_YET, AVAILABLE, BUSY, OFF_DUTY).
+4. [x] UI responsive trên mobile (Đã thay bằng Popover lịch sang trọng, đồng bộ ID giống menu thường).
 5. [ ] 5 ngôn ngữ dịch chính xác (Phase cuối).
-6. [ ] AI Avatar load nhanh (Tối ưu WebP).
+6. [x] AI Avatar load nhanh (Tối ưu WebP).
 7. [ ] Test "1 NV" UX mượt mà, không lag.

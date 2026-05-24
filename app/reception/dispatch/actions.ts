@@ -225,6 +225,49 @@ export async function processDispatch(bookingId: string, dispatchData: {
         const supabase = getSupabaseAdmin();
         if (!supabase) throw new Error('Supabase admin not initialized');
 
+        // 🔥 PRE-PROCESSOR: Chống ghi đè mất thời gian đã chạy (Stale Data Overwrite)
+        if (dispatchData.itemUpdates && dispatchData.itemUpdates.length > 0) {
+            const { data: currentItems } = await supabase.from('BookingItems').select('id, segments').eq('bookingId', bookingId);
+            if (currentItems) {
+                dispatchData.itemUpdates = dispatchData.itemUpdates.map(updateItem => {
+                    const dbItem = currentItems.find(i => i.id === updateItem.id);
+                    if (!dbItem) return updateItem;
+                    
+                    let dbSegs: any[] = [];
+                    try { dbSegs = typeof dbItem.segments === 'string' ? JSON.parse(dbItem.segments) : (dbItem.segments || []); } catch {}
+                    
+                    if (updateItem.segments && Array.isArray(updateItem.segments)) {
+                        updateItem.segments = updateItem.segments.map(incomingSeg => {
+                            const dbSeg = dbSegs.find((s: any) => s.ktvId === incomingSeg.ktvId);
+                            if (dbSeg) {
+                                // Trộn lại các mốc thời gian thực tế từ DB để không bị xóa mất
+                                return {
+                                    ...incomingSeg,
+                                    actualStartTime: dbSeg.actualStartTime || incomingSeg.actualStartTime,
+                                    actualEndTime: dbSeg.actualEndTime || incomingSeg.actualEndTime,
+                                    feedbackTime: dbSeg.feedbackTime || incomingSeg.feedbackTime,
+                                    reviewTime: dbSeg.reviewTime || incomingSeg.reviewTime
+                                };
+                            }
+                            return incomingSeg;
+                        });
+                    }
+                    return updateItem;
+                });
+            }
+        }
+        
+        // 🚀 BẢO VỆ TRẠNG THÁI BOOKING: Nếu DB đang ở trạng thái cao hơn, không cho lùi
+        const { data: currentBooking } = await supabase.from('Bookings').select('status').eq('id', bookingId).single();
+        if (currentBooking && currentBooking.status && dispatchData.status) {
+            const STATUS_WEIGHT: Record<string, number> = { 'NEW': 0, 'WAITING': 1, 'PREPARING': 2, 'READY': 3, 'IN_PROGRESS': 4, 'CLEANING': 5, 'FEEDBACK': 6, 'DONE': 7 };
+            const dbWeight = STATUS_WEIGHT[currentBooking.status] || 0;
+            const incomingWeight = STATUS_WEIGHT[dispatchData.status] || 0;
+            if (dbWeight > incomingWeight) {
+                dispatchData.status = currentBooking.status;
+            }
+        }
+
         // GỌI RPC MỚI ĐỂ THỰC THI TOÀN BỘ TRANSACTION
         const { data, error } = await supabase.rpc('dispatch_confirm_booking', {
             p_booking_id: bookingId,
@@ -346,6 +389,37 @@ export async function saveDraftDispatch(bookingId: string, dispatchData: {
         await requirePermission('dispatch_board');
         const supabase = getSupabaseAdmin();
         if (!supabase) throw new Error('Supabase admin not initialized');
+
+        // 🔥 PRE-PROCESSOR: Chống ghi đè mất thời gian đã chạy (Stale Data Overwrite)
+        if (dispatchData.itemUpdates && dispatchData.itemUpdates.length > 0) {
+            const { data: currentItems } = await supabase.from('BookingItems').select('id, segments').eq('bookingId', bookingId);
+            if (currentItems) {
+                dispatchData.itemUpdates = dispatchData.itemUpdates.map(updateItem => {
+                    const dbItem = currentItems.find(i => i.id === updateItem.id);
+                    if (!dbItem) return updateItem;
+                    
+                    let dbSegs: any[] = [];
+                    try { dbSegs = typeof dbItem.segments === 'string' ? JSON.parse(dbItem.segments) : (dbItem.segments || []); } catch {}
+                    
+                    if (updateItem.segments && Array.isArray(updateItem.segments)) {
+                        updateItem.segments = updateItem.segments.map(incomingSeg => {
+                            const dbSeg = dbSegs.find((s: any) => s.ktvId === incomingSeg.ktvId);
+                            if (dbSeg) {
+                                return {
+                                    ...incomingSeg,
+                                    actualStartTime: dbSeg.actualStartTime || incomingSeg.actualStartTime,
+                                    actualEndTime: dbSeg.actualEndTime || incomingSeg.actualEndTime,
+                                    feedbackTime: dbSeg.feedbackTime || incomingSeg.feedbackTime,
+                                    reviewTime: dbSeg.reviewTime || incomingSeg.reviewTime
+                                };
+                            }
+                            return incomingSeg;
+                        });
+                    }
+                    return updateItem;
+                });
+            }
+        }
 
         // 1. Update Booking (Dữ liệu tổng quát cho Bill, không đổi status)
         const { error: bError } = await supabase
@@ -706,7 +780,7 @@ export async function updateBookingStatus(bookingId: string, newStatus: string, 
     }
 }
 
-export async function updateBookingItemStatus(itemIds: string[], newStatus: string, date: string, bookingId: string, targetKtvIds?: string[]) {
+export async function updateBookingItemStatus(itemIds: string[], newStatus: string, date: string, bookingId: string, targetKtvIds?: string[], forceBackward: boolean = false) {
     try {
         await requirePermission('dispatch_board');
         const supabase = getSupabaseAdmin();
@@ -718,11 +792,11 @@ export async function updateBookingItemStatus(itemIds: string[], newStatus: stri
         
         // Filter: chỉ update items CÓ THỂ chuyển trạng thái, skip items đã ở bước cao hơn
         const updatableIds = (itemsCurrent || [])
-            .filter(item => !item.status || canTransition(item.status, newStatus))
+            .filter(item => !item.status || canTransition(item.status, newStatus) || forceBackward)
             .map(item => item.id);
         
         const skippedItems = (itemsCurrent || [])
-            .filter(item => item.status && !canTransition(item.status, newStatus));
+            .filter(item => item.status && !canTransition(item.status, newStatus) && !forceBackward);
         
         if (skippedItems.length > 0) {
             console.log(`[updateBookingItemStatus] Skipping ${skippedItems.length} items already at higher status:`, 
@@ -730,7 +804,7 @@ export async function updateBookingItemStatus(itemIds: string[], newStatus: stri
         }
         
         for (const item of itemsCurrent || []) {
-            let segs = [];
+            let segs: any[] = [];
             try { segs = typeof item.segments === 'string' ? JSON.parse(item.segments) : (item.segments || []); } catch {}
             
             let segmentsModified = false;
@@ -744,6 +818,20 @@ export async function updateBookingItemStatus(itemIds: string[], newStatus: stri
                         s.actualStartTime = new Date().toISOString();
                         segmentsModified = true;
                     }
+                });
+            }
+
+            // Xóa sạch thời gian nếu Lễ tân ÉP KÉO LÙI về Chuẩn Bị
+            if (['PREPARING', 'WAITING', 'NEW'].includes(newStatus) && forceBackward) {
+                segs.forEach((s: any) => {
+                    if (targetKtvIds && targetKtvIds.length > 0 && s.ktvId && !targetKtvIds.includes(s.ktvId)) {
+                        return;
+                    }
+                    delete s.actualStartTime;
+                    delete s.actualEndTime;
+                    delete s.feedbackTime;
+                    delete s.reviewTime;
+                    segmentsModified = true;
                 });
             }
 

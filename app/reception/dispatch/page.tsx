@@ -1336,7 +1336,7 @@ if (!hasPermission('dispatch_board')) {
     }
   };
 
-  async function handleUpdateStatus(orderId: string, newStatus: string, itemIds?: string[], skipConfirm?: boolean, targetKtvIds?: string[]) {
+  async function handleUpdateStatus(orderId: string, newStatus: string, itemIds?: string[], skipConfirm?: boolean, targetKtvIds?: string[], forceBackward: boolean = false) {
     // Determine context for confirmation
     const isPartial = itemIds && itemIds.length > 0;
     

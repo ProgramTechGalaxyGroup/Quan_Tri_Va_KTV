@@ -244,13 +244,30 @@ export function KanbanBoard({ orders, onUpdateStatus, onOpenDetail, onConfirmAdd
                                     }
                                     
                                     if (!canTransition(draggedSubOrder.dispatchStatus, newStatus)) {
+                                        const { mapDispatchToRawStatus, STATUS_FLOW } = require('@/lib/dispatch-status');
+                                        const fromIdx = STATUS_FLOW.indexOf(mapDispatchToRawStatus(draggedSubOrder.dispatchStatus));
+                                        const toIdx = STATUS_FLOW.indexOf(mapDispatchToRawStatus(newStatus));
+                                        
+                                        // Nếu kéo lùi (từ bước cao về bước thấp hơn)
+                                        if (fromIdx !== -1 && toIdx !== -1 && toIdx < fromIdx) {
+                                            const confirmBackward = confirm(`Trạng thái đang đi lùi từ ${draggedSubOrder.dispatchStatus} về ${newStatus}.\n\n⚠️ LƯU Ý: Nếu kéo về CHUẨN BỊ, mọi thời gian đã chạy của KTV sẽ bị XÓA SẠCH để làm lại từ đầu!\n\nBạn có chắc chắn muốn KÉO LẠI không?`);
+                                            if (!confirmBackward) {
+                                                setDraggedSubOrderId(null);
+                                                return;
+                                            }
+                                            // Kéo lùi được chấp nhận
+                                            onUpdateStatus(draggedSubOrder.bookingId, newStatus, itemIds, true, targetKtvIds, true);
+                                            setDraggedSubOrderId(null);
+                                            return;
+                                        }
+                                        
                                         console.warn(`[Kanban] Cấm chuyển từ ${draggedSubOrder.dispatchStatus} sang ${newStatus}`);
                                         setDraggedSubOrderId(null);
                                         return;
                                     }
 
                                     // if column is 'COMPLETED', use 'COMPLETED'
-                                    onUpdateStatus(draggedSubOrder.bookingId, newStatus, itemIds, false, targetKtvIds);
+                                    onUpdateStatus(draggedSubOrder.bookingId, newStatus, itemIds, false, targetKtvIds, false);
                                 }
                                 setDraggedSubOrderId(null);
                             }
