@@ -5,8 +5,13 @@ export function useFinanceKTV() {
     const { user, hasPermission } = useAuth();
     const [withdrawals, setWithdrawals] = useState<any[]>([]);
     const [summaries, setSummaries] = useState<any[]>([]);
+    const [bonusSummaries, setBonusSummaries] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // UI States
+    const [activeTab, setActiveTab] = useState<'TUA' | 'BONUS' | 'TICH_LUY'>('TUA');
+    const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
 
     // Adjustment Modal State
     const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
@@ -28,6 +33,11 @@ export function useFinanceKTV() {
             const resSum = await fetch('/api/finance/ktv-summary');
             const jsonSum = await resSum.json();
             if (jsonSum.success) setSummaries(jsonSum.data);
+
+            // Lấy Bonus Summaries
+            const resBonus = await fetch('/api/finance/ktv-bonus-summary');
+            const jsonBonus = await resBonus.json();
+            if (jsonBonus.success) setBonusSummaries(jsonBonus.data);
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -160,8 +170,13 @@ export function useFinanceKTV() {
         canAccessPage,
         withdrawals,
         summaries,
+        bonusSummaries,
         isLoading,
         isProcessing,
+        activeTab,
+        setActiveTab,
+        isHistoryExpanded,
+        setIsHistoryExpanded,
         isAdjustmentModalOpen,
         selectedKtv,
         adjAmount,

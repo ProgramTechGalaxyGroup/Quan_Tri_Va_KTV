@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useKTVWallet } from './KTVWallet.logic';
-import { Zap, Clock, Banknote, TrendingDown, TrendingUp, Gift, Calendar } from 'lucide-react';
+import { Zap, Clock, Banknote, TrendingDown, TrendingUp, Gift, Calendar, Star, PiggyBank } from 'lucide-react';
 
 const THEME = {
   primary: 'bg-emerald-600',
@@ -18,12 +18,17 @@ const THEME = {
 };
 
 export default function KTVWalletPage() {
-    const { user, canViewWallet, walletBalance, walletTimeline, isLoading, handleWithdraw } = useKTVWallet();
+    const { 
+        user, canViewWallet, activeTab, setActiveTab, canViewBonus, canViewPiggyBank,
+        walletBalance, walletTimeline, bonusBalance, bonusTimeline, 
+        isLoading, handleWithdraw, handleRedeemBonus 
+    } = useKTVWallet();
 
     const groupedTimeline = useMemo(() => {
-        if (!walletTimeline) return [];
+        const sourceData = activeTab === 'TUA' ? walletTimeline : (activeTab === 'BONUS' ? bonusTimeline : []);
+        if (!sourceData) return [];
         const groups: Record<string, any[]> = {};
-        walletTimeline.forEach((item: any) => {
+        sourceData.forEach((item: any) => {
             const dateStr = new Date(item.created_at).toLocaleDateString('vi-VN', {
                 weekday: 'long',
                 day: '2-digit',
@@ -34,7 +39,7 @@ export default function KTVWalletPage() {
             groups[dateStr].push(item);
         });
         return Object.entries(groups).map(([date, items]) => ({ date, items }));
-    }, [walletTimeline]);
+    }, [activeTab, walletTimeline, bonusTimeline]);
 
     if (!user || !canViewWallet) {
         return (
@@ -55,10 +60,39 @@ export default function KTVWalletPage() {
     return (
         <AppLayout>
             <div className="p-4 lg:p-8 space-y-6 max-w-2xl mx-auto pb-32">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-4">
                     <h1 className={`text-2xl font-black tracking-tight ${THEME.textBase}`}>
-                        Ví Thu Nhập
+                        Hệ Sinh Thái Ví
                     </h1>
+                </div>
+
+                {/* TABS */}
+                <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+                    <button 
+                        onClick={() => setActiveTab('TUA')}
+                        className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold whitespace-nowrap transition-all ${activeTab === 'TUA' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-white text-slate-500 hover:bg-slate-100'}`}
+                    >
+                        <Zap size={18} className={activeTab === 'TUA' ? 'text-amber-300 fill-amber-300' : ''} />
+                        Ví Tua
+                    </button>
+                    {canViewBonus && (
+                        <button 
+                            onClick={() => setActiveTab('BONUS')}
+                            className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold whitespace-nowrap transition-all ${activeTab === 'BONUS' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-white text-slate-500 hover:bg-slate-100'}`}
+                        >
+                            <Star size={18} className={activeTab === 'BONUS' ? 'fill-white' : ''} />
+                            Ví Bonus
+                        </button>
+                    )}
+                    {canViewPiggyBank && (
+                        <button 
+                            onClick={() => setActiveTab('TICH_LUY')}
+                            className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold whitespace-nowrap transition-all ${activeTab === 'TICH_LUY' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-white text-slate-500 hover:bg-slate-100'}`}
+                        >
+                            <PiggyBank size={18} />
+                            Ví Tích Luỹ
+                        </button>
+                    )}
                 </div>
 
                 {isLoading ? (
@@ -68,7 +102,7 @@ export default function KTVWalletPage() {
                 ) : (
                     <>
                         {/* Ví Thu Nhập (KTV Wallet) */}
-                        {walletBalance && (
+                        {activeTab === 'TUA' && walletBalance && (
                             <div className={`p-6 rounded-[32px] shadow-lg shadow-emerald-900/10 bg-gradient-to-br from-emerald-600 to-teal-800 text-white`}>
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="font-bold text-emerald-100 flex items-center gap-2 uppercase tracking-widest text-[11px]">
@@ -102,6 +136,45 @@ export default function KTVWalletPage() {
                             </div>
                         )}
 
+                        {/* Ví Bonus */}
+                        {activeTab === 'BONUS' && bonusBalance && (
+                            <div className={`p-6 rounded-[32px] shadow-lg shadow-amber-900/10 bg-gradient-to-br from-amber-500 to-orange-600 text-white`}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="font-bold text-amber-100 flex items-center gap-2 uppercase tracking-widest text-[11px]">
+                                        <Star size={16} className="fill-amber-100" />
+                                        Điểm Thưởng Tích Luỹ
+                                    </h3>
+                                    <span className="text-[10px] bg-white/20 px-2 py-1 rounded-lg font-bold">VNĐ</span>
+                                </div>
+                                <div className="mb-5 flex flex-col gap-1">
+                                    <div className="flex items-end gap-2">
+                                        <p className="text-4xl font-black tracking-tight drop-shadow-sm">
+                                            {Number(bonusBalance.vnd_value || 0).toLocaleString()}đ
+                                        </p>
+                                    </div>
+                                    <p className="text-xs text-amber-100/90 font-medium">
+                                        (Tương đương <span className="font-bold text-white">{Number(bonusBalance.points || 0).toLocaleString()}</span> điểm)
+                                    </p>
+                                </div>
+                                
+                                <button 
+                                    onClick={handleRedeemBonus}
+                                    className="w-full py-3.5 bg-white text-orange-700 font-black rounded-2xl text-xs uppercase tracking-widest active:scale-[0.98] transition-transform shadow-lg shadow-white/10 flex justify-center items-center gap-2"
+                                >
+                                    <Banknote size={16} /> Yêu Cầu Quy Đổi Tiền
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Ví Tích Luỹ */}
+                        {activeTab === 'TICH_LUY' && (
+                            <div className={`p-8 text-center rounded-[32px] shadow-lg shadow-indigo-900/10 bg-gradient-to-br from-indigo-500 to-purple-700 text-white`}>
+                                <PiggyBank size={48} className="mx-auto mb-4 opacity-50" />
+                                <h3 className="font-black text-xl mb-2">Ví Tích Luỹ</h3>
+                                <p className="text-sm text-indigo-100/80">Tính năng này đang được phát triển, vui lòng quay lại sau.</p>
+                            </div>
+                        )}
+
                         {groupedTimeline.length > 0 ? (
                             <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
                                 <div className="flex items-center justify-between mb-6">
@@ -123,33 +196,44 @@ export default function KTVWalletPage() {
 
                                             <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-100 before:to-transparent">
                                                 {group.items.map((item: any, idx: number) => {
-                                                    const isPositive = Number(item.amount) >= 0;
-                                                    const isWithdrawal = item.type === 'WITHDRAWAL';
+                                                    const isPositive = activeTab === 'BONUS' ? Number(item.points) > 0 : Number(item.amount) >= 0;
+                                                    const isWithdrawal = activeTab === 'BONUS' ? item.type === 'REDEEM' : item.type === 'WITHDRAWAL';
                                                     const isPending = item.status === 'PENDING';
                                                     const isRejected = item.status === 'REJECTED';
+                                                    
+                                                    let Icon = Zap;
+                                                    let iconColor = 'text-slate-500';
+                                                    if (activeTab === 'BONUS') {
+                                                        Icon = item.type === 'EARN' ? Star : (item.type === 'REDEEM' ? TrendingDown : TrendingDown);
+                                                        iconColor = item.type === 'EARN' ? 'text-amber-500 fill-amber-500' : 'text-rose-500';
+                                                    } else {
+                                                        Icon = item.type === 'TIP' ? Gift : (item.type === 'COMMISSION' ? Banknote : (item.type === 'WITHDRAWAL' ? TrendingDown : (item.type === 'GIFT' ? TrendingUp : Zap)));
+                                                        iconColor = item.type === 'TIP' ? 'text-emerald-500' : (item.type === 'COMMISSION' ? 'text-indigo-500' : (item.type === 'WITHDRAWAL' ? 'text-rose-500' : (item.type === 'GIFT' ? 'text-amber-500' : 'text-slate-500')));
+                                                    }
+
+                                                    const titleText = activeTab === 'BONUS' ? (item.description || item.type) : item.title;
+                                                    const noteText = activeTab === 'BONUS' ? null : item.note;
+                                                    const displayAmount = activeTab === 'BONUS' ? Math.abs(Number(item.points) * 1000) : Number(item.amount);
+
                                                     return (
                                                         <div key={item.id || idx} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                                            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-slate-100 text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 ${isRejected ? 'opacity-50' : ''}`}>
-                                                                {item.type === 'TIP' ? <Gift size={16} className="text-emerald-500" /> :
-                                                                item.type === 'COMMISSION' ? <Banknote size={16} className="text-indigo-500" /> :
-                                                                item.type === 'WITHDRAWAL' ? <TrendingDown size={16} className="text-rose-500" /> :
-                                                                item.type === 'GIFT' ? <TrendingUp size={16} className="text-amber-500" /> :
-                                                                <Zap size={16} />}
+                                                            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-slate-100 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 ${isRejected ? 'opacity-50' : ''} ${iconColor}`}>
+                                                                <Icon size={16} />
                                                             </div>
                                                             <div className={`w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-2xl border ${isRejected ? 'border-dashed border-slate-200 opacity-60' : 'border-slate-100'} shadow-sm transition-all hover:shadow-md`}>
                                                                 <div className="flex items-center justify-between mb-1">
-                                                                    <span className={`font-bold text-xs line-clamp-1 ${isRejected ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{item.title}</span>
+                                                                    <span className={`font-bold text-xs line-clamp-2 pr-2 ${isRejected ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{titleText}</span>
                                                                     <span className={`font-black text-sm whitespace-nowrap ${isRejected ? 'text-slate-400 line-through' : isWithdrawal ? 'text-rose-600' : isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                                        {isPositive ? '+' : ''}{Number(item.amount).toLocaleString()}đ
+                                                                        {isPositive ? '+' : '-'}{displayAmount.toLocaleString()}đ
                                                                     </span>
                                                                 </div>
-                                                                {item.note && <div className={`mt-1.5 text-[10px] p-2 rounded-lg ${isRejected ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-500'}`}>{item.note}</div>}
+                                                                {noteText && <div className={`mt-1.5 text-[10px] p-2 rounded-lg ${isRejected ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-500'}`}>{noteText}</div>}
                                                                 <div className="flex items-center justify-between mt-2">
                                                                     <div className="flex items-center gap-2">
                                                                         <span className="text-[10px] text-slate-400 font-medium">
                                                                             {new Date(item.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                                                         </span>
-                                                                        {item.type !== 'TIP' && !isRejected && (
+                                                                        {activeTab === 'TUA' && item.type !== 'TIP' && !isRejected && (
                                                                             <span className="text-[10px] text-slate-400 font-medium border-l border-slate-200 pl-2">
                                                                                 Số dư: <span className="font-bold text-slate-600">{Number(item.running_balance || 0).toLocaleString()}đ</span>
                                                                             </span>

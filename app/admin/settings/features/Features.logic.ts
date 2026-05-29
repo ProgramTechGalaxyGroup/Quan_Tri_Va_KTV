@@ -17,6 +17,18 @@ export const FEATURE_FLAG_DEFS = [
         description: 'Tự động trừ tiền phạt khi nghỉ đột xuất',
         configKey: 'sudden_off_penalty',
     },
+    {
+        key: 'enable_bonus_wallet',
+        label: '⭐ Ví Bonus',
+        description: 'Cho phép KTV sử dụng và quy đổi Ví Điểm Thưởng',
+        configKey: null,
+    },
+    {
+        key: 'enable_piggy_wallet',
+        label: '🐷 Ví Tích Luỹ',
+        description: 'Bật tính năng Ví Tích Luỹ cho nhân viên',
+        configKey: null,
+    },
 ] as const;
 
 export type FeatureFlagKey = typeof FEATURE_FLAG_DEFS[number]['key'];
