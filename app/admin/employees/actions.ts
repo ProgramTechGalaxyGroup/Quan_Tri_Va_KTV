@@ -33,7 +33,7 @@ export async function getStaffList() {
                 password: authInfo?.password || '---',
                 userRole: authInfo?.role || 'TECHNICIAN'
             };
-        });
+        }).filter(s => s.userRole !== 'DEV' && s.id !== 'dev' && s.username !== 'dev');
 
         return { success: true, data: staffWithAuth };
     } catch (error: any) {

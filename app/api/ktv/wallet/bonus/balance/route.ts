@@ -13,11 +13,14 @@ export async function GET(request: Request) {
         const supabase = getSupabaseAdmin();
         if (!supabase) return NextResponse.json({ success: false, error: 'Lỗi máy chủ' }, { status: 500 });
 
+        const START_DATE = '2026-06-01';
+
         // 1. Fetch Earned Bonus
         const { data: earns, error: earnErr } = await supabase
             .from('KTVDailyLedger')
             .select('total_bonus')
             .eq('staff_id', techCode)
+            .gte('date', START_DATE)
             .gt('total_bonus', 0);
 
         if (earnErr) throw earnErr;
@@ -27,7 +30,8 @@ export async function GET(request: Request) {
             .from('WalletAdjustments')
             .select('amount, type')
             .eq('staff_id', techCode)
-            .eq('wallet_type', 'BONUS');
+            .eq('wallet_type', 'BONUS')
+            .gte('created_at', `${START_DATE}T00:00:00+07:00`);
 
         if (adjErr) throw adjErr;
 
@@ -37,6 +41,7 @@ export async function GET(request: Request) {
             .select('amount')
             .eq('staff_id', techCode)
             .eq('wallet_type', 'BONUS')
+            .gte('request_date', `${START_DATE}T00:00:00+07:00`)
             .in('status', ['PENDING', 'APPROVED']);
 
         if (wthErr) throw wthErr;
