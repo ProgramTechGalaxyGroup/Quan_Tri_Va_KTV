@@ -688,7 +688,6 @@ const KTVAttendancePage = () => {
                             </div>
                         </div>
                     </div>
-                    </div>
                 )}
 
                 {/* WEBRTC CAMERA MODAL */}
