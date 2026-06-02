@@ -1103,8 +1103,9 @@ export function useKTVDashboard(config?: DashboardConfig) {
                     }
                 }
             }
-            // Merge: cùng phòng → 1 timer tổng
-            const isMergeSync = allMySegs.length > 1 && new Set(allMySegs.map((s: any) => s.roomId || 'unknown')).size === 1;
+            // Merge: gộp các dịch vụ khác nhau
+            const uniqueItemIdsForSync = new Set(allMySegs.map((s: any) => s._itemId || s.itemId));
+            const isMergeSync = allMySegs.length > 1 && uniqueItemIdsForSync.size === allMySegs.length;
 
             let currentSegDuration: number;
             let activeSegStartTime: string | null = null;
@@ -1341,7 +1342,8 @@ export function useKTVDashboard(config?: DashboardConfig) {
 
             // Tính shouldMerge để set timer đúng tổng nếu cần
             const segItemIds = new Set(allMySegs.map((s: any) => s._itemId).filter(Boolean));
-            const isMerge = allMySegs.length > 1 && new Set(allMySegs.map((s: any) => s.roomId || 'unknown')).size === 1;
+            const uniqueItemIdsForPrep = new Set(allMySegs.map((s: any) => s._itemId || s.itemId));
+            const isMerge = allMySegs.length > 1 && uniqueItemIdsForPrep.size === allMySegs.length;
 
             const initDuration = isMerge
                 ? allMySegs.reduce((sum: number, s: any) => sum + (Number(s.duration) || 60), 0)
