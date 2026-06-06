@@ -616,11 +616,18 @@ function ScreenTimer({ logic }: { logic: any }) {
   };
 
   const closeWebRTCCamera = () => {
+      if (videoRef.current) {
+          videoRef.current.srcObject = null;
+      }
       if (stream) {
-          stream.getTracks().forEach(track => track.stop());
+          stream.getTracks().forEach(track => {
+              track.stop();
+          });
           setStream(null);
       }
-      setIsCameraOpen(false);
+      setTimeout(() => {
+          setIsCameraOpen(false);
+      }, 150);
   };
 
   const captureFromVideo = () => {
