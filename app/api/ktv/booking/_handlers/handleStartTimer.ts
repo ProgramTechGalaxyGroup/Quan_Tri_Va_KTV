@@ -162,26 +162,47 @@ export async function handleStartTimer(ctx: HandlerContext): Promise<HandlerResu
         const turnUpdatePayload: any = { status: 'working', start_time: nowVN };
 
         if (turnForSync.start_time) {
-            // Calculate original duration from dispatch times
-            const { data: freshTurn } = await supabase
-                .from('TurnQueue')
-                .select('estimated_end_time')
-                .eq('id', turnForSync.id)
-                .single();
-            
-            const estEnd = freshTurn?.estimated_end_time;
-            if (estEnd) {
-                const [sh, sm] = String(turnForSync.start_time).split(':').map(Number);
-                const [eh, em] = String(estEnd).split(':').map(Number);
-                let durationMins = (eh * 60 + em) - (sh * 60 + sm);
-                if (durationMins <= 0) durationMins += 24 * 60; // cross midnight
+            try {
+                // Calculate original duration from dispatch times
+                const { data: freshTurn } = await supabase
+                    .from('TurnQueue')
+                    .select('estimated_end_time')
+                    .eq('id', turnForSync.id)
+                    .single();
+                
+                const estEnd = freshTurn?.estimated_end_time;
+                if (estEnd) {
+                    const shParts = String(turnForSync.start_time).split(':');
+                    const ehParts = String(estEnd).split(':');
+                    
+                    if (shParts.length >= 2 && ehParts.length >= 2) {
+                        const sh = Number(shParts[0]);
+                        const sm = Number(shParts[1]);
+                        const eh = Number(ehParts[0]);
+                        const em = Number(ehParts[1]);
 
-                const [nh, nm] = nowVN.split(':').map(Number);
-                let endMins = nh * 60 + nm + durationMins;
-                const endH = Math.floor(endMins / 60) % 24;
-                const endM = endMins % 60;
-                turnUpdatePayload.estimated_end_time = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}:00`;
-                console.log(`🔄 [KTV API] ${technicianCode}: Recalculated end ${estEnd} → ${turnUpdatePayload.estimated_end_time} (actual start: ${nowVN}, dur: ${durationMins}m)`);
+                        if (!isNaN(sh) && !isNaN(sm) && !isNaN(eh) && !isNaN(em)) {
+                            let durationMins = (eh * 60 + em) - (sh * 60 + sm);
+                            if (durationMins <= 0) durationMins += 24 * 60; // cross midnight
+
+                            const nhParts = nowVN.split(':');
+                            if (nhParts.length >= 2) {
+                                const nh = Number(nhParts[0]);
+                                const nm = Number(nhParts[1]);
+
+                                if (!isNaN(nh) && !isNaN(nm)) {
+                                    let endMins = nh * 60 + nm + durationMins;
+                                    const endH = Math.floor(endMins / 60) % 24;
+                                    const endM = endMins % 60;
+                                    turnUpdatePayload.estimated_end_time = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}:00`;
+                                    console.log(`🔄 [KTV API] ${technicianCode}: Recalculated end ${estEnd} → ${turnUpdatePayload.estimated_end_time} (actual start: ${nowVN}, dur: ${durationMins}m)`);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (calcErr) {
+                console.error('❌ [KTV API] Failed to recalculate TurnQueue estimated end time:', calcErr);
             }
         }
 

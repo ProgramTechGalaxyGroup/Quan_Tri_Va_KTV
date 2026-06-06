@@ -123,6 +123,42 @@ export function useKTVDashboard(config?: DashboardConfig) {
     const recalcTimerRef = useRef<(() => void) | null>(null);
     const targetBookingIdRef = useRef<string | null>(config?.targetBookingId || null);
     const isTransitioningRef = useRef<boolean>(false);
+
+    // 📸 Selfie photo before starting service
+    const [startPhotoBase64, setStartPhotoBase64State] = useState<string | null>(null);
+
+    const setStartPhotoBase64 = useCallback((val: string | null) => {
+        setStartPhotoBase64State(val);
+        if (!bookingRef.current?.id || !ktvId) return;
+        try {
+            const key = `ktv_start_photo_${ktvId}_${bookingRef.current.id}_${activeSegmentIndexRef.current}`;
+            if (val) {
+                localStorage.setItem(key, val);
+            } else {
+                localStorage.removeItem(key);
+            }
+        } catch(e) {}
+    }, [ktvId]);
+
+    // Restore temporary selfie photo from localStorage on load / booking / segment change
+    useEffect(() => {
+        if (!booking?.id || !ktvId) {
+            setStartPhotoBase64State(null);
+            return;
+        }
+        try {
+            const key = `ktv_start_photo_${ktvId}_${booking.id}_${activeSegmentIndex}`;
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                setStartPhotoBase64State(saved);
+            } else {
+                setStartPhotoBase64State(null);
+            }
+        } catch(e) {
+            setStartPhotoBase64State(null);
+        }
+    }, [booking?.id, ktvId, activeSegmentIndex]);
+
     // ⚠️ DO NOT REMOVE — Fix timer drift 16/05/2026
     // Refs cho absolute timer: mỗi tick tính từ Date.now() thay vì prev-1
     // Chống lệch thời gian khi KTV tắt/mở màn hình
@@ -1398,11 +1434,15 @@ export function useKTVDashboard(config?: DashboardConfig) {
                 status: 'IN_PROGRESS',
                 techCode: ktvId,
                 action: 'START_TIMER',
-                shouldMerge: shouldMerge
+                shouldMerge: shouldMerge,
+                photoBase64: startPhotoBase64
             })
         });
         const res = await response.json();
         if (res.success) {
+            // 📸 Clean up check-in photo from preview and localStorage
+            setStartPhotoBase64(null);
+
             // 🚀 Gửi tín hiệu Broadcast sang Lễ tân để UI cập nhật tức thời
             supabase.channel('dispatch_board_realtime').send({
                 type: 'broadcast',
@@ -1829,6 +1869,8 @@ export function useKTVDashboard(config?: DashboardConfig) {
         canStart,
         allowedStartTime,
         activeSegmentIndex,
+        startPhotoBase64,
+        setStartPhotoBase64,
         // Room procedures & issue reporting
         prepProcedure,
         cleanProcedure,
