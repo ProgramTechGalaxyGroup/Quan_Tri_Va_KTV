@@ -164,8 +164,13 @@ export async function confirmWebBooking(bookingId: string) {
     const supabase = getSupabaseAdmin();
     if (!supabase) throw new Error('Supabase admin not initialized');
 
-    // Lấy thông tin source hiện tại để map sang loại tương ứng
-    const { data: bData } = await supabase.from('Bookings').select('source').eq('id', bookingId).single();
+    // Lấy thông tin hiện tại để map sang loại tương ứng và gửi thông báo KTV
+    const { data: bData } = await supabase
+      .from('Bookings')
+      .select('source, technicianCode, roomName, bedId, billCode')
+      .eq('id', bookingId)
+      .single();
+
     let newSource = 'STANDARD_WALK_IN';
     if (bData?.source === 'VIP_BOOKING') newSource = 'VIP_WALK_IN';
 
@@ -188,6 +193,23 @@ export async function confirmWebBooking(bookingId: string) {
         type: 'NEW_ORDER',
         message: msg,
     });
+
+    // 2. Gửi thông báo cho KTV yêu cầu nếu có sẵn
+    if (bData?.technicianCode) {
+        const techList = bData.technicianCode.split(',').map((t: string) => t.trim()).filter(Boolean);
+        const locationInfo = `Phòng ${bData.roomName || '???'}${bData.bedId ? ` - Giường ${bData.bedId.split('-').pop()}` : ''}`;
+        
+        for (const techCode of techList) {
+            const ktvMsg = `Bạn có đơn yêu cầu mới #${bData.billCode || bookingId} tại ${locationInfo}`;
+            
+            await createNotification({
+                bookingId: bookingId,
+                employeeId: techCode,
+                type: 'KTV_NEW_ORDER',
+                message: ktvMsg,
+            });
+        }
+    }
 
     return { success: true };
   } catch (error: any) {

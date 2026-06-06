@@ -354,21 +354,19 @@ export async function processDispatch(bookingId: string, dispatchData: {
 
                 const message = `Bạn được phân công: ${svcName}${svcTime}. Vui lòng kiểm tra ứng dụng.`;
 
-                // Kiểm tra xem đã có thông báo NEW_ORDER chưa đọc cho đơn này chưa để tránh spam
-                const { data: existingNotif } = await supabase.from('StaffNotifications')
-                    .select('id')
+                // 🗑️ Dọn dẹp thông báo sơ sài tự động do trigger tạo ra để tránh trùng lặp tin nhắn và phát âm thanh
+                await supabase.from('StaffNotifications')
+                    .delete()
                     .eq('bookingId', bookingId)
                     .eq('employeeId', staffId)
-                    .eq('type', 'NEW_ORDER')
-                    .eq('isRead', false)
-                    .limit(1);
+                    .eq('type', 'KTV_NEW_ORDER')
+                    .eq('isRead', false);
 
-                if (existingNotif && existingNotif.length > 0) continue;
-
+                // Gửi thông báo chi tiết cho KTV với loại KTV_NEW_ORDER để vượt qua bộ lọc client
                 await createNotification({
                     bookingId: bookingId,
                     employeeId: String(staffId),
-                    type: 'NEW_ORDER',
+                    type: 'KTV_NEW_ORDER',
                     message: message,
                 });
             }

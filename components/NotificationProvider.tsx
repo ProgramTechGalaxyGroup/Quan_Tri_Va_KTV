@@ -63,6 +63,54 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     const [soundEnabled, setSoundEnabled] = useState(true);
     const [ktvScreen, setKtvScreen] = useState<string>('DASHBOARD');
     const [notifRules, setNotifRules] = useState<Record<string, any>>({});
+    const [isOnShift, setIsOnShift] = useState<boolean>(false);
+
+    // 🔄 Sync KTV on-shift status in real-time
+    useEffect(() => {
+        if (!user || role?.id !== 'ktv') {
+            setIsOnShift(false);
+            return;
+        }
+
+        const fetchInitialShiftStatus = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('Users')
+                    .select('isOnShift')
+                    .eq('id', user.id)
+                    .single();
+                if (!error && data) {
+                    setIsOnShift(data.isOnShift || false);
+                    console.log(`📡 [NotificationProvider] Initial isOnShift: ${data.isOnShift}`);
+                }
+            } catch (err) {
+                console.error('Error fetching initial shift status:', err);
+            }
+        };
+
+        fetchInitialShiftStatus();
+
+        // Subscribe to realtime updates for this user's isOnShift field
+        const userChannel = supabase
+            .channel(`user_shift_status_${user.id}`)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'Users',
+                filter: `id=eq.${user.id}`
+            }, (payload: any) => {
+                const updatedUser = payload.new;
+                if (updatedUser && updatedUser.isOnShift !== undefined) {
+                    setIsOnShift(updatedUser.isOnShift);
+                    console.log(`📡 [NotificationProvider] Realtime isOnShift updated to: ${updatedUser.isOnShift}`);
+                }
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(userChannel);
+        };
+    }, [user, role]);
     const audioUnlockedRef = useRef<boolean>(false);
     const audioInstanceRef = useRef<HTMLAudioElement | null>(null);
     const lastSoundTimeRef = useRef<number>(0);
@@ -327,7 +375,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             if (isKtv && rule?.require_on_shift) {
                 // KTV off-shift → skip (unless they are target employee for personal notifs)
                 // For now, KTV who is target employee always receives regardless
-                if (!isTargetEmployee) {
+                if (!isTargetEmployee && !isOnShift) {
                     console.log('⏭️ [NotificationProvider] KTV off-shift, skipping:', notifType);
                     return;
                 }
