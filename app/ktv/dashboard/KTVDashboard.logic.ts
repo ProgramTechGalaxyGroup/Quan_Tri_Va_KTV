@@ -1121,7 +1121,8 @@ export function useKTVDashboard(config?: DashboardConfig) {
                     segs = typeof ai?.segments === 'string' ? JSON.parse(ai.segments) : (Array.isArray(ai?.segments) ? ai.segments : []);
                 } catch { segs = []; }
                 const mySegs = segs.filter((seg: any) => ktvMatchesSeg(seg.ktvId, ktvId));
-                allMySegs.push(...mySegs);
+                const mySegsWithId = mySegs.map((seg: any) => ({ ...seg, _itemId: ai.id }));
+                allMySegs.push(...mySegsWithId);
             }
 
             allMySegs.sort((a, b) => {
