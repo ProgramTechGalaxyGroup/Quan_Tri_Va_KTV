@@ -244,7 +244,8 @@ export async function GET(request: NextRequest) {
                 .from('KTVShifts')
                 .select('*')
                 .eq('employeeId', employeeId)
-                .in('status', ['APPROVED', 'REJECTED', 'REPLACED'])
+                .in('status', ['ACTIVE', 'APPROVED', 'REJECTED', 'REPLACED'])
+                .not('previousShift', 'is', null) // Chỉ lấy các bản ghi thực sự là hành động ĐỔI CA
                 .order('createdAt', { ascending: false })
                 .limit(10);
 

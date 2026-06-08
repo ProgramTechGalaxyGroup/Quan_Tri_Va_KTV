@@ -14,12 +14,16 @@ import { t } from './Schedule.i18n';
 const STATUS_COLORS = {
     PENDING: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', icon: Clock },
     APPROVED: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', icon: CheckCircle2 },
+    ACTIVE: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', icon: CheckCircle2 },
+    REPLACED: { bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200', icon: CheckCircle2 },
     REJECTED: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', icon: XCircle },
 } as const;
 
 const STATUS_LABELS: Record<string, string> = {
     PENDING: t.statusPending,
     APPROVED: t.statusApproved,
+    ACTIVE: 'THÀNH CÔNG',
+    REPLACED: 'ĐÃ THAY THẾ',
     REJECTED: t.statusRejected,
 };
 
@@ -438,7 +442,8 @@ const ShiftTab = ({ currentShift, tomorrowShift, shiftHistory, isLoadingShift, n
     if (isLoadingShift) {
         return (<div className="flex items-center justify-center py-16 gap-2 text-gray-400"><Loader2 size={20} className="animate-spin" /><span className="text-sm">{t.shiftLoading}</span></div>);
     }
-    const availableShifts = ['SHIFT_1', 'SHIFT_2', 'SHIFT_3'].filter(s => s !== currentShift?.shiftType);
+    const effectiveShiftForChange = tomorrowShift?.shiftType || currentShift?.shiftType;
+    const allShifts = ['SHIFT_1', 'SHIFT_2', 'SHIFT_3'];
     const nowHour = new Date().getHours();
     const isPast19 = nowHour >= 19;
 
@@ -487,14 +492,25 @@ const ShiftTab = ({ currentShift, tomorrowShift, shiftHistory, isLoadingShift, n
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">{t.shiftSelectNew}</label>
                         <div className="space-y-2">
-                            {availableShifts.map(shift => (
-                                <button key={shift} type="button" onClick={() => setNewShiftType(shift)}
-                                    className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all text-left ${newShiftType === shift ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-100 bg-gray-50 text-gray-700 hover:border-gray-200'}`}>
-                                    <div className={`w-3 h-3 rounded-full ${SHIFT_COLORS[shift] || 'bg-gray-400'}`} />
-                                    <span className="text-sm font-bold">{SHIFT_LABELS[shift] || shift}</span>
-                                    {newShiftType === shift && <CheckCircle2 size={16} className="ml-auto text-indigo-500" />}
-                                </button>
-                            ))}
+                            {allShifts.map(shift => {
+                                const isCurrent = shift === effectiveShiftForChange;
+                                if (isCurrent) {
+                                    return (
+                                        <div key={shift} className="w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 border-emerald-100 bg-emerald-50 text-emerald-700 transition-all text-left opacity-90 cursor-not-allowed">
+                                            <CheckCircle2 size={16} className="text-emerald-500" />
+                                            <span className="text-sm font-medium">Bạn đã đăng ký {SHIFT_LABELS[shift]}</span>
+                                        </div>
+                                    );
+                                }
+                                return (
+                                    <button key={shift} type="button" onClick={() => setNewShiftType(shift)}
+                                        className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all text-left ${newShiftType === shift ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-100 bg-gray-50 text-gray-700 hover:border-gray-200'}`}>
+                                        <div className={`w-3 h-3 rounded-full ${SHIFT_COLORS[shift] || 'bg-gray-400'}`} />
+                                        <span className="text-sm font-bold">{SHIFT_LABELS[shift] || shift}</span>
+                                        {newShiftType === shift && <CheckCircle2 size={16} className="ml-auto text-indigo-500" />}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                     {shiftError && (
