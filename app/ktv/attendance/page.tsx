@@ -133,7 +133,7 @@ const KTVAttendancePage = () => {
         const brightness = getAverageBrightness(canvas);
         console.log(`🔆 [Brightness Check] Giá trị: ${brightness.toFixed(1)} | Ngưỡng: ${minPhotoBrightness}`);
         if (brightness < minPhotoBrightness) {
-            alert(`⚠️ Ảnh quá tối (độ sáng: ${brightness.toFixed(0)}/255)!\nVui lòng bật đèn hoặc di chuyển đến nơi có đủ ánh sáng rồi chụp lại.`);
+            alert('⚠️ Ảnh quá tối!\nVui lòng bật đèn hoặc di chuyển đến nơi có đủ ánh sáng rồi chụp lại.');
             return;
         }
 
