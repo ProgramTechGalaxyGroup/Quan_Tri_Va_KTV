@@ -390,7 +390,7 @@ export async function POST(request: Request) {
             // Insert intent to KTVWithdrawals
             const { error: withdrawErr } = await supabase.from('KTVWithdrawals').insert({
                 staff_id: staffCode,
-                amount: 0,
+                amount: 1, // Dùng số 1 thay vì 0 để vượt qua CHECK constraint KTVWithdrawals_amount_check
                 status: 'PENDING',
                 note: 'Báo trước lúc điểm danh (Chưa chốt số tiền)',
                 wallet_type: 'TUA'

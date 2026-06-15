@@ -13,7 +13,8 @@ export default function FinanceKTVPage() {
         activeTab, setActiveTab, isHistoryExpanded, setIsHistoryExpanded,
         filterType, setFilterType, fromDate, setFromDate, toDate, setToDate,
         handleApprove, handleReject, refresh,
-        isAdjustmentModalOpen, selectedKtv, adjAmount, setAdjAmount, adjType, setAdjType, adjWalletType, setAdjWalletType, adjReason, setAdjReason, setIsAdjustmentModalOpen, handleOpenAdjustment, handleSubmitAdjustment
+        isAdjustmentModalOpen, selectedKtv, adjAmount, setAdjAmount, adjType, setAdjType, adjWalletType, setAdjWalletType, adjReason, setAdjReason, setIsAdjustmentModalOpen, handleOpenAdjustment, handleSubmitAdjustment,
+        handleAcknowledgeIntent
     } = useFinanceKTV();
 
     if (!user || !canAccessPage) {
@@ -28,8 +29,8 @@ export default function FinanceKTVPage() {
         );
     }
 
-    const pendingRequests = withdrawals.filter(w => w.status === 'PENDING' && w.amount > 0);
-    const intentRequests = withdrawals.filter(w => w.status === 'PENDING' && w.amount === 0);
+    const pendingRequests = withdrawals.filter(w => w.status === 'PENDING' && w.amount > 1);
+    const intentRequests = withdrawals.filter(w => w.status === 'PENDING' && w.amount === 1);
     const allHistoryRequests = withdrawals.filter(w => w.status !== 'PENDING');
     const historyRequests = isHistoryExpanded ? allHistoryRequests : allHistoryRequests.slice(0, 3);
 
@@ -71,7 +72,7 @@ export default function FinanceKTVPage() {
                                         </div>
                                     </div>
                                     <button 
-                                        onClick={() => handleReject(req.id)}
+                                        onClick={() => handleAcknowledgeIntent(req.id)}
                                         disabled={isProcessing}
                                         title="Đã ghi nhận, ẩn thông báo"
                                         className="p-2 bg-white rounded-lg text-amber-600 shadow-sm border border-amber-100 hover:bg-amber-100 transition-colors"

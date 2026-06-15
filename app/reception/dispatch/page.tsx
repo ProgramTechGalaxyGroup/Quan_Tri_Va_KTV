@@ -1846,8 +1846,8 @@ if (!hasPermission('dispatch_board')) {
                           return { ...o, services: mergedServices };
                       });
                     }}
-                    onDispatchGroup={(group) => {
-                      const svcIds = group.items.map(i => i.id);
+                    onDispatchGroup={(group, specificSvcId) => {
+                      const svcIds = specificSvcId ? [specificSvcId] : group.items.map(i => i.id);
                       handleDispatch(false, svcIds);
                     }}
                     onPrintGroup={(group) => {

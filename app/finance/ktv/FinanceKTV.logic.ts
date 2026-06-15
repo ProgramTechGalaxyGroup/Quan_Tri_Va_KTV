@@ -128,6 +128,28 @@ export function useFinanceKTV() {
         }
     };
 
+    const handleAcknowledgeIntent = async (id: string) => {
+        setIsProcessing(true);
+        try {
+            const res = await fetch(`/api/finance/withdrawals/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    status: 'REJECTED', 
+                    note: 'Đã chuẩn bị xong',
+                    adminId: user?.id || 'SYSTEM',
+                    adminName: user?.name || 'Hệ thống'
+                })
+            });
+            const json = await res.json();
+            if (json.success) fetchData();
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     const handleOpenAdjustment = (ktvId: string, ktvName: string) => {
         setSelectedKtv({ id: ktvId, name: ktvName });
         setAdjAmount('');
@@ -213,6 +235,7 @@ export function useFinanceKTV() {
         setIsAdjustmentModalOpen,
         handleApprove,
         handleReject,
+        handleAcknowledgeIntent,
         handleOpenAdjustment,
         handleSubmitAdjustment,
         refresh: fetchData

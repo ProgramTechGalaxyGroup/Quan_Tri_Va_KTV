@@ -37,7 +37,7 @@ interface QuickDispatchTableProps {
   reminders?: ReminderData[];
   billCode?: string;
   customerName?: string;
-  onDispatchGroup?: (group: ServiceGroup) => void;
+  onDispatchGroup?: (group: ServiceGroup, specificSvcId?: string) => void;
 }
 
 const SERVICE_TO_SKILL: Record<string, string> = {
@@ -338,7 +338,14 @@ export const QuickDispatchTable = ({
             busyBedIds={busyBedIds}
             onUpdate={(patch) => updateGroup(groupKey, patch)}
             onPrint={() => onPrintGroup({ serviceName: displayServiceName, items, ...state })}
-            onDispatch={() => onDispatchGroup && onDispatchGroup({ serviceName: displayServiceName, items, ...state })}
+            onDispatch={(ktvIdx?: number) => {
+              if (!onDispatchGroup) return;
+              let specificSvcId: string | undefined = undefined;
+              if (ktvIdx !== undefined && items.length > 0) {
+                  specificSvcId = items[ktvIdx % items.length].id;
+              }
+              onDispatchGroup({ serviceName: displayServiceName, items, ...state }, specificSvcId);
+            }}
             customerReqs={customerReqs}
             reminders={reminders}
             getLatestEndTime={getLatestEndTime}
@@ -366,7 +373,7 @@ interface ServiceGroupCardProps {
   busyBedIds: string[];
   onUpdate: (patch: Record<string, unknown>) => void;
   onPrint: () => void;
-  onDispatch?: () => void;
+  onDispatch?: (ktvIdx?: number) => void;
   customerReqs?: { genderReq?: string; strength?: string; focus?: string; avoid?: string; customerNote?: string; };
   reminders?: { id: string; content: string }[];
   getLatestEndTime: (ktvId: string) => string;
@@ -556,14 +563,6 @@ const ServiceGroupCard = ({
           <span className="text-[10px] text-gray-400 font-bold shrink-0">Tên in phiếu:</span>
           <input type="text" value={state.displayName} onChange={e => onUpdate({ displayName: e.target.value })} placeholder={serviceName}
             className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold w-40 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 outline-none bg-white" />
-          {onDispatch && (
-            <button 
-              onClick={() => onDispatch()} 
-              className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-black rounded-xl transition-all active:scale-95 shadow-md shadow-indigo-200 uppercase tracking-wider flex items-center gap-1.5 ml-2 shrink-0"
-            >
-              <Send size={12} strokeWidth={3} /> ĐIỀU PHỐI LẺ
-            </button>
-          )}
         </div>
       </div>
 
@@ -752,6 +751,15 @@ const ServiceGroupCard = ({
                             )}
                         </AnimatePresence>
                     </div>
+
+                    {onDispatch && (
+                        <button 
+                            onClick={() => onDispatch(idx)} 
+                            className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black rounded-xl transition-all active:scale-95 shadow-sm shadow-indigo-200 uppercase tracking-wider flex items-center gap-1.5 ml-auto shrink-0"
+                        >
+                            <Send size={12} strokeWidth={3} /> ĐIỀU PHỐI LẺ
+                        </button>
+                    )}
                   </div>
                 </div>
               ); })}
