@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Printer, X, ChevronDown, ChevronUp, Plus, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Printer, X, ChevronDown, ChevronUp, Plus, Clock, AlertCircle, CheckCircle2, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ReminderData, ServiceBlock, StaffData, TurnQueueData, WorkSegment } from '../types';
 
@@ -37,6 +37,7 @@ interface QuickDispatchTableProps {
   reminders?: ReminderData[];
   billCode?: string;
   customerName?: string;
+  onDispatchGroup?: (group: ServiceGroup) => void;
 }
 
 const SERVICE_TO_SKILL: Record<string, string> = {
@@ -65,7 +66,7 @@ const genId = () => Math.random().toString(36).substring(2, 9);
 
 export const QuickDispatchTable = ({
   services, orderId, rooms, beds, availableTurns, busyBedIds,
-  onUpdateServices, onPrintGroup, customerReqs, reminders = []
+  onUpdateServices, onPrintGroup, customerReqs, reminders = [], onDispatchGroup
 }: QuickDispatchTableProps) => {
 
   const isInitializedRef = useRef(false);
@@ -337,6 +338,7 @@ export const QuickDispatchTable = ({
             busyBedIds={busyBedIds}
             onUpdate={(patch) => updateGroup(groupKey, patch)}
             onPrint={() => onPrintGroup({ serviceName: displayServiceName, items, ...state })}
+            onDispatch={() => onDispatchGroup && onDispatchGroup({ serviceName: displayServiceName, items, ...state })}
             customerReqs={customerReqs}
             reminders={reminders}
             getLatestEndTime={getLatestEndTime}
@@ -364,6 +366,7 @@ interface ServiceGroupCardProps {
   busyBedIds: string[];
   onUpdate: (patch: Record<string, unknown>) => void;
   onPrint: () => void;
+  onDispatch?: () => void;
   customerReqs?: { genderReq?: string; strength?: string; focus?: string; avoid?: string; customerNote?: string; };
   reminders?: { id: string; content: string }[];
   getLatestEndTime: (ktvId: string) => string;
@@ -373,7 +376,7 @@ const MAX_KTV_PER_GROUP = 10;
 
 const ServiceGroupCard = ({
   serviceName, serviceDescription, count, duration, state, targetSkill,
-  availableTurns, allSelectedKtvIds, rooms, beds, busyBedIds, onUpdate, onPrint, customerReqs, reminders = [], getLatestEndTime
+  availableTurns, allSelectedKtvIds, rooms, beds, busyBedIds, onUpdate, onPrint, onDispatch, customerReqs, reminders = [], getLatestEndTime
 }: ServiceGroupCardProps) => {
   const [isKtvDropdownOpen, setIsKtvDropdownOpen] = useState(false);
   const [ktvSearch, setKtvSearch] = useState('');
@@ -553,6 +556,14 @@ const ServiceGroupCard = ({
           <span className="text-[10px] text-gray-400 font-bold shrink-0">Tên in phiếu:</span>
           <input type="text" value={state.displayName} onChange={e => onUpdate({ displayName: e.target.value })} placeholder={serviceName}
             className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold w-40 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 outline-none bg-white" />
+          {onDispatch && (
+            <button 
+              onClick={() => onDispatch()} 
+              className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-black rounded-xl transition-all active:scale-95 shadow-md shadow-indigo-200 uppercase tracking-wider flex items-center gap-1.5 ml-2 shrink-0"
+            >
+              <Send size={12} strokeWidth={3} /> ĐIỀU PHỐI LẺ
+            </button>
+          )}
         </div>
       </div>
 
@@ -741,8 +752,6 @@ const ServiceGroupCard = ({
                             )}
                         </AnimatePresence>
                     </div>
-
-                    <button onClick={() => onPrint()} className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-black rounded-xl transition-all active:scale-95 shrink-0 flex items-center gap-1"><ChevronDown size={10} className="rotate-[-90deg]" />DP</button>
                   </div>
                 </div>
               ); })}

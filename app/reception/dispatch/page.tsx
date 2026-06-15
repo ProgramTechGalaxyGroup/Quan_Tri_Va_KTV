@@ -1201,13 +1201,13 @@ if (!hasPermission('dispatch_board')) {
       console.error(err);
     }
   };
-  const handleDispatch = async (skipValidation: boolean = false, specificSvcId?: string, overrideOrderId?: string) => {
+  const handleDispatch = async (skipValidation: boolean = false, specificSvcIds?: string[], overrideOrderId?: string) => {
     const orderToDispatch = overrideOrderId ? orders.find(o => o.id === overrideOrderId) : selectedOrder;
     if (!orderToDispatch) return;
     if (!skipValidation) {
-      // ⚠️ Khi dispatch lẻ (specificSvcId), chỉ validate DV đang dispatch, không check toàn bộ đơn
-      const orderToValidate = specificSvcId 
-        ? { ...orderToDispatch, services: orderToDispatch.services.filter(s => s.id === specificSvcId) }
+      // ⚠️ Khi dispatch lẻ (specificSvcIds), chỉ validate các DV đang dispatch, không check toàn bộ đơn
+      const orderToValidate = specificSvcIds && specificSvcIds.length > 0 
+        ? { ...orderToDispatch, services: orderToDispatch.services.filter(s => specificSvcIds.includes(s.id)) }
         : orderToDispatch;
       const missing = getMissingInfo(orderToValidate);
       if (missing.length > 0) {
@@ -1222,8 +1222,8 @@ if (!hasPermission('dispatch_board')) {
       const allStaffAssignments: Array<{ ktvId: string; bookingItemId: string; roomId: string | null; bedId: string | null; turnsCompleted: number; queuePos: number; startTime: string; endTime: string }> = [];
       const techCodesSet = new Set<string>();
 
-      const targetServices = specificSvcId 
-        ? clonedOrder.services.filter(s => s.id === specificSvcId) 
+      const targetServices = specificSvcIds && specificSvcIds.length > 0 
+        ? clonedOrder.services.filter(s => specificSvcIds.includes(s.id)) 
         : clonedOrder.services;
 
       for (const svc of targetServices) {
@@ -1273,8 +1273,8 @@ if (!hasPermission('dispatch_board')) {
       // ⚠️ DO NOT REMOVE — Fix 16/05/2026: Dispatch lẻ bảo vệ KTV đang làm
       // Khi dispatch lẻ DV3, RPC cleanup step 0.5 sẽ XÓA KTV1/KTV2 đang ACTIVE cho DV1/DV2
       // vì họ không nằm trong p_staff_assignments. Fix: thêm "keepalive" entries cho KTV các DV khác.
-      if (specificSvcId) {
-        const otherServices = clonedOrder.services.filter(s => s.id !== specificSvcId);
+      if (specificSvcIds && specificSvcIds.length > 0) {
+        const otherServices = clonedOrder.services.filter(s => !specificSvcIds.includes(s.id));
         for (const svc of otherServices) {
           for (const row of svc.staffList) {
             if (!row.ktvId) continue;
@@ -1351,7 +1351,7 @@ if (!hasPermission('dispatch_board')) {
           }
       }
 
-      const isPartial = !!specificSvcId;
+      const isPartial = !!(specificSvcIds && specificSvcIds.length > 0);
       // ⚠️ Khi dispatch: KHÔNG gửi status để tránh lỗi backward transition nếu đang IN_PROGRESS/CLEANING
       // Chỉ gửi PREPARING nếu trạng thái thực sự là NEW, pending, hoặc WAITING (chưa điều phối)
       const isPending = !clonedOrder.rawStatus || ['NEW', 'pending', 'WAITING'].includes(clonedOrder.rawStatus);
@@ -1369,7 +1369,7 @@ if (!hasPermission('dispatch_board')) {
       });
 
       if (res.success) {
-        if (!specificSvcId || targetServices.length === clonedOrder.services.length) {
+        if (!isPartial || targetServices.length === clonedOrder.services.length) {
             setOrders(prev => prev.map(o =>
             o.id === clonedOrder.id ? { ...o, dispatchStatus: 'dispatched' } : o
             ));
@@ -1382,7 +1382,7 @@ if (!hasPermission('dispatch_board')) {
                 return {
                     ...o,
                     services: o.services.map(s => {
-                        if (s.id !== specificSvcId) return s;
+                        if (!specificSvcIds?.includes(s.id)) return s;
                         return { ...s, options: { ...s.options }, status: (s.status && !['NEW', 'WAITING'].includes(s.status)) ? s.status : 'PREPARING' }; 
                     })
                 };
@@ -1846,6 +1846,10 @@ if (!hasPermission('dispatch_board')) {
                           return { ...o, services: mergedServices };
                       });
                     }}
+                    onDispatchGroup={(group) => {
+                      const svcIds = group.items.map(i => i.id);
+                      handleDispatch(false, svcIds);
+                    }}
                     onPrintGroup={(group) => {
                       // TODO: QuickPrintTicket integration
                       alert(`🖨️ In phiếu: ${group.displayName || group.serviceName} x${group.items.length}\nKTV: ${group.selectedKtvIds.join(', ')}\n${(group.ktvStartTimes || [])[0] || '--:--'} → ${(group.ktvEndTimes || [])[0] || '--:--'}`);
@@ -1939,7 +1943,7 @@ if (!hasPermission('dispatch_board')) {
                                 ));
                               }
                             }}
-                            onDispatchSvc={(oId, svcId) => handleDispatch(false, svcId)}
+                            onDispatchSvc={(oId, svcId) => handleDispatch(false, [svcId])}
                           />
                         </Reorder.Item>
                       );
@@ -1961,16 +1965,31 @@ if (!hasPermission('dispatch_board')) {
                   >
                     <Save size={20} strokeWidth={3} /> LƯU
                   </button>
-                  <button
-                    onClick={() => setShowDispatchConfirmModal(true)}
-                    disabled={!isDispatchReady(selectedSubOrder.originalOrder)}
-                    className={`flex-[2] py-5 rounded-3xl font-black text-sm lg:text-base tracking-widest uppercase transition-all flex items-center justify-center gap-3 shadow-2xl ${isDispatchReady(selectedSubOrder.originalOrder)
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200 active:scale-95'
-                      : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
-                      }`}
-                  >
-                    <Send size={20} strokeWidth={3} /> XÁC NHẬN ĐIỀU PHỐI
-                  </button>
+                  {(() => {
+                    const hasStartedService = selectedSubOrder.originalOrder.services.some(
+                      (s: any) => s.status && ['IN_PROGRESS', 'CLEANING', 'FEEDBACK', 'DONE', 'COMPLETED'].includes(s.status)
+                    );
+                    const ready = isDispatchReady(selectedSubOrder.originalOrder) && !hasStartedService;
+                    
+                    return (
+                      <button
+                        onClick={() => setShowDispatchConfirmModal(true)}
+                        disabled={!ready}
+                        title={hasStartedService ? "Đã có dịch vụ bắt đầu, vui lòng điều phối lẻ từng dịch vụ!" : ""}
+                        className={`flex-[2] flex-col py-3 rounded-3xl font-black text-sm lg:text-base tracking-widest uppercase transition-all flex items-center justify-center gap-1 shadow-2xl ${ready
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200 active:scale-95'
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                          }`}
+                      >
+                        <div className="flex items-center gap-3">
+                           <Send size={20} strokeWidth={3} /> XÁC NHẬN ĐIỀU PHỐI
+                        </div>
+                        {hasStartedService && (
+                          <span className="text-[10px] text-rose-500 font-bold normal-case tracking-normal">(Vui lòng điều phối lẻ vì đã có DV chạy)</span>
+                        )}
+                      </button>
+                    )
+                  })()}
                 </div>
               </div>
             ) : (
