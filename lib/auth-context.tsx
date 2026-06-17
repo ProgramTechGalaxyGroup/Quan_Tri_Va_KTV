@@ -122,6 +122,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    // 🧹 DỌN DẸP: Xóa Push Subscription khi đăng xuất để cắt đứt thiết bị khỏi tài khoản cũ
+    try {
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg && reg.pushManager) {
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) {
+            // Hủy đăng ký từ phía trình duyệt
+            await sub.unsubscribe();
+            // Gửi API để xóa khỏi Database
+            if (user?.id) {
+              await fetch('/api/ktv/push-unsubscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ staffId: user.id, endpoint: sub.endpoint })
+              }).catch(e => console.warn('Unsubscribe API network error:', e));
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error during push unsubscribe:', e);
+    }
+
     setUser(null);
     setRole(null);
     sessionStorage.removeItem('spa_auth_user');
