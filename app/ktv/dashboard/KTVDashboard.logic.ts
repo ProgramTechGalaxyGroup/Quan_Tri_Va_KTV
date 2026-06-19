@@ -1240,9 +1240,13 @@ export function useKTVDashboard(config?: DashboardConfig) {
             // 🔒 GUARD: Chỉ sync khi có actualStartTime thực sự từ DB
             // Nếu chỉ có tStart (giờ đặt lịch), KHÔNG dùng để tính elapsed → sẽ ra sai
             if (!activeSegStartTime || !allMySegs[0]?.actualStartTime) {
-                // Chưa có actualStartTime thật → dùng timerStartMsRef hiện tại (client-local)
-                // Không update gì cả để tránh override timer về 0
-                return;
+                // ⚠️ FIX: Nếu Lễ tân ÉP KÉO thẻ sang IN_PROGRESS nhưng KTV chưa tự bấm
+                // -> Vẫn cho phép tính countdown dựa vào item.timeStart (tStart)
+                if (booking.status === 'IN_PROGRESS' && tStart) {
+                    activeSegStartTime = tStart;
+                } else {
+                    return;
+                }
             }
             
             if (activeSegStartTime && typeof activeSegStartTime === 'string' && /^\d{1,2}:\d{2}/.test(activeSegStartTime)) {
@@ -1321,10 +1325,15 @@ export function useKTVDashboard(config?: DashboardConfig) {
     // 🏁 Auto-finish: trigger khi timer đạt 0 (tách riêng khỏi countdown để React xử lý đúng)
     useEffect(() => {
         if (isTimerRunning && !isPrepping && timeRemaining === 0) {
-            // Guard an toàn: chỉ kích hoạt nếu KTV đã thực sự bắt đầu (có actualStartTime)
+            // Guard an toàn: chỉ kích hoạt nếu KTV đã thực sự bắt đầu
             // Tránh trường hợp lỗi fetch data khiến timeRemaining = 0 ảo ngay lúc mount
             let hasStarted = false;
             if (booking && ktvId) {
+                // ⚠️ BẢO VỆ TUYỆT ĐỐI: Nếu timerRemaining = 0 do khởi tạo, block Autofinish
+                if (timerStartMsRef.current === 0) {
+                    console.warn(`🛡️ [AutoFinish Blocked] timerStartMsRef is 0. Ignoring.`);
+                    return;
+                }
                 try {
                     const allItems: any[] = booking.BookingItems || [];
                     const allAssignedItems = allItems.filter((bi: any) => {

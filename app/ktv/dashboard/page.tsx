@@ -1137,7 +1137,7 @@ function ScreenTimer({ logic }: { logic: any }) {
               <div className="flex gap-3">
                 <button
                   onClick={() => openWebRTCCamera('environment')}
-                  disabled={logic.isLoading || (isPrepping && prepTimeRemaining > 0) || !logic.canStart}
+                  disabled={logic.isLoading || !logic.canStart}
                   className="flex-[2] h-16 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black text-xs shadow-xl shadow-emerald-200/50 rounded-[32px] flex items-center justify-center gap-2 transition-all disabled:opacity-45 disabled:active:scale-100"
                 >
                   <Camera size={18} />
@@ -1145,7 +1145,7 @@ function ScreenTimer({ logic }: { logic: any }) {
                 </button>
                 <label className="flex-[0.8] h-16 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-[32px] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-[0.98] disabled:opacity-40">
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Tải ảnh</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} disabled={logic.isLoading || (isPrepping && prepTimeRemaining > 0) || !logic.canStart} />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} disabled={logic.isLoading || !logic.canStart} />
                 </label>
               </div>
             )}
