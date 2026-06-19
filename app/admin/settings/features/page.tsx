@@ -133,9 +133,6 @@ const FeatureFlagsPage = () => {
                                 <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 w-24">
                                     Mã NV
                                 </th>
-                                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">
-                                    Tên
-                                </th>
                                 {FEATURE_FLAG_DEFS.map(def => (
                                     <th
                                         key={def.key}
@@ -150,7 +147,7 @@ const FeatureFlagsPage = () => {
                         <tbody className="divide-y divide-gray-100">
                             {staffList.length === 0 ? (
                                 <tr>
-                                    <td colSpan={2 + FEATURE_FLAG_DEFS.length} className="text-center text-gray-400 py-12 text-sm">
+                                    <td colSpan={1 + FEATURE_FLAG_DEFS.length} className="text-center text-gray-400 py-12 text-sm">
                                         {searchQuery ? 'Không tìm thấy nhân viên' : 'Không có dữ liệu'}
                                     </td>
                                 </tr>
@@ -165,9 +162,6 @@ const FeatureFlagsPage = () => {
                                             <span className="text-sm font-mono font-semibold text-indigo-600">
                                                 {staff.id}
                                             </span>
-                                        </td>
-                                        <td className="px-4 py-2">
-                                            <span className="text-sm text-gray-800">{staff.full_name}</span>
                                         </td>
                                         {FEATURE_FLAG_DEFS.map(def => {
                                             const isEnabled = staff.feature_flags?.[def.key] === true;

@@ -29,6 +29,12 @@ export const FEATURE_FLAG_DEFS = [
         description: 'Bật tính năng Ví Tích Luỹ cho nhân viên',
         configKey: null,
     },
+    {
+        key: 'allow_on_call',
+        label: '🛵 Nhận đơn ngoài giờ',
+        description: 'Cho phép KTV tự bật trạng thái sẵn sàng nhận đơn khi ở nhà',
+        configKey: null,
+    },
 ] as const;
 
 export type FeatureFlagKey = typeof FEATURE_FLAG_DEFS[number]['key'];
