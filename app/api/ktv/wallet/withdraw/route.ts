@@ -16,25 +16,8 @@ export async function POST(request: Request) {
 
         const requestAmount = Number(amount);
 
-        // 1. Chống Spam: Kiểm tra xem đã có lệnh PENDING nào chưa
-        const { data: pendingRequests, error: pendingError } = await supabase
-            .from('KTVWithdrawals')
-            .select('id')
-            .eq('staff_id', techCode)
-            .eq('wallet_type', walletType)
-            .eq('status', 'PENDING');
-
-        if (pendingError) {
-            console.error('Error checking pending requests:', pendingError);
-            return NextResponse.json({ success: false, error: 'Lỗi kiểm tra hệ thống' }, { status: 500 });
-        }
-
-        if (pendingRequests && pendingRequests.length > 0) {
-            return NextResponse.json({ 
-                success: false, 
-                error: 'Bạn đang có một lệnh rút tiền chờ duyệt. Vui lòng đợi lệnh đó hoàn tất trước khi tạo lệnh mới.' 
-            }, { status: 400 });
-        }
+        // 1. Chống Spam: Đã được yêu cầu tắt
+        // KTV có thể gửi thông báo rút tiền nhiều lần dù cho lệnh cũ chưa được duyệt.
 
         if (walletType === 'TUA') {
             const { data: balanceResult, error: balanceError } = await supabase.rpc('get_ktv_wallet_balance', {
@@ -82,7 +65,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
             success: true,
             data: insertData,
-            message: 'Tạo lệnh rút tiền thành công. Vui lòng chờ kế toán duyệt.'
+            message: 'Đã gửi thông báo rút tiền đến Quầy/Kế toán thành công.'
         });
 
     } catch (err: any) {

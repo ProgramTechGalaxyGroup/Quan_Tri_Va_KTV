@@ -46,9 +46,16 @@ export async function PATCH(
         }
 
         // Tùy chọn: Thêm Notification cho KTV
+        let amountText = '';
+        if (data.amount === -1 || data.amount === 0) {
+            amountText = 'đầu ngày';
+        } else {
+            amountText = `${data.amount.toLocaleString()}đ`;
+        }
+
         const notificationMessage = status === 'APPROVED' 
-            ? `Thủ quỹ đã giao tiền mặt cho yêu cầu rút ${data.amount.toLocaleString()}đ của bạn.`
-            : `Yêu cầu rút ${data.amount.toLocaleString()}đ của bạn đã bị từ chối. Lý do: ${note || 'Không có'}`;
+            ? `Thủ quỹ đã xử lý xong yêu cầu rút tiền ${amountText} của bạn.`
+            : `Yêu cầu rút tiền ${amountText} của bạn đã bị từ chối. Lý do: ${note || 'Không có'}`;
 
         await createNotification({
             employeeId: data.staff_id,
