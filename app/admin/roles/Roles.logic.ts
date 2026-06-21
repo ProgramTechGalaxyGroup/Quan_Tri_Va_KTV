@@ -28,6 +28,11 @@ const MOCK_ROLES: Role[] = [
         name: 'Kỹ Thuật Viên',
         permissions: ['ktv_dashboard', 'ktv_wallet', 'ktv_attendance', 'ktv_schedule', 'ktv_performance', 'ktv_history', 'service_handbook', 'settings'],
     },
+    {
+        id: 'support',
+        name: 'Hậu Cần / Support',
+        permissions: ['ktv_attendance', 'settings'],
+    },
 ];
 
 /**

@@ -40,6 +40,7 @@ export async function getRolePermissions() {
             'LEAD_RECEPTIONIST': 'reception',
             'TECHNICIAN': 'ktv',
             'KTV': 'ktv',
+            'SUPPORT': 'support',
         };
 
         for (const user of (users || [])) {
@@ -93,6 +94,7 @@ const ROLE_ID_TO_DB: Record<string, string[]> = {
     'admin': ['ADMIN'],
     'reception': ['RECEPTIONIST', 'LEAD_RECEPTIONIST'],
     'ktv': ['TECHNICIAN', 'KTV'],
+    'support': ['SUPPORT'],
 };
 
 export async function saveRolePermissions(roles: { id: string, permissions: string[] }[]) {

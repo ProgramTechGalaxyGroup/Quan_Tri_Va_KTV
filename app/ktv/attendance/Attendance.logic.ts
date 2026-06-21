@@ -183,6 +183,11 @@ export const useKTVAttendance = () => {
 
     // --- Handlers ---
     const checkIsLate = useCallback(() => {
+        if (user?.role === 'SUPPORT') {
+            setIsLate(false);
+            return false;
+        }
+
         if (!activeShiftType) {
             setIsLate(false);
             return false;
