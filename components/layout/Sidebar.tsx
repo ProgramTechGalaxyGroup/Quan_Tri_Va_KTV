@@ -296,29 +296,8 @@ export function Sidebar({ isOpen, onClose, isExpanded = true, onToggleExpand }: 
 
       {/* Bottom Section for Settings */}
       <div className="mt-auto border-t border-gray-100 bg-white z-10 w-full pl-0 pb-6 flex flex-col">
-        {hasPermission('settings') && (
-          <div className={`p-4 pb-2 w-full ${!isExpanded && 'px-3'}`}>
-            <Link
-              href={PATHS.settings}
-              onClick={() => {
-                if (window.innerWidth < 1024) onClose();
-              }}
-              title={!isExpanded ? "Cài đặt" : undefined}
-              className={`flex items-center ${isExpanded ? 'gap-3 px-3' : 'justify-center px-0'} py-2.5 rounded-xl transition-all duration-200 ${pathname === PATHS.settings
-                ? 'bg-indigo-50 text-indigo-700 font-medium shadow-sm border border-indigo-100/50'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`}
-            >
-              <span className={pathname === PATHS.settings ? 'text-indigo-600' : 'text-gray-400'}>
-                {ICONS.settings}
-              </span>
-              {isExpanded && <span className="text-sm font-medium">Cài đặt</span>}
-            </Link>
-          </div>
-        )}
-
         {/* Version & Reload Button */}
-        <div className={`px-4 pt-3 pb-2 w-full flex flex-col ${isExpanded ? 'items-start' : 'items-center'} gap-2`}>
+        <div className={`px-4 pt-4 pb-2 w-full flex flex-col ${isExpanded ? 'items-start' : 'items-center'} gap-2`}>
           <button
               onClick={() => {
                 if ('serviceWorker' in navigator) {
@@ -345,6 +324,27 @@ export function Sidebar({ isOpen, onClose, isExpanded = true, onToggleExpand }: 
               </div>
           )}
         </div>
+
+        {hasPermission('settings') && (
+          <div className={`p-4 pt-2 pb-0 w-full ${!isExpanded && 'px-3'}`}>
+            <Link
+              href={PATHS.settings}
+              onClick={() => {
+                if (window.innerWidth < 1024) onClose();
+              }}
+              title={!isExpanded ? "Cài đặt" : undefined}
+              className={`flex items-center ${isExpanded ? 'gap-3 px-3' : 'justify-center px-0'} py-2.5 rounded-xl transition-all duration-200 ${pathname === PATHS.settings
+                ? 'bg-indigo-50 text-indigo-700 font-medium shadow-sm border border-indigo-100/50'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
+            >
+              <span className={pathname === PATHS.settings ? 'text-indigo-600' : 'text-gray-400'}>
+                {ICONS.settings}
+              </span>
+              {isExpanded && <span className="text-sm font-medium">Cài đặt</span>}
+            </Link>
+          </div>
+        )}
       </div>
     </aside>
   </>
