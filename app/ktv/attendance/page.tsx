@@ -778,7 +778,8 @@ const KTVAttendancePage = () => {
                             <video 
                                 ref={videoRef} 
                                 autoPlay 
-                                playsInline 
+                                playsInline
+                                muted
                                 className="w-full h-full object-cover"
                             />
                             <button 
