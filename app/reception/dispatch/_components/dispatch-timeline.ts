@@ -125,7 +125,9 @@ export function buildOrderTimeline(orders: PendingOrder[]): SubOrder[] {
                     calculatedStart = lastGroupCalculatedStart;
                 } else if (currentMaxEndStr) {
                     // Nối tiếp xuyên dịch vụ!
-                    calculatedStart = currentMaxEndStr;
+                    // Chỉ đẩy lùi giờ (push forward) nếu dịch vụ trước kết thúc TRỄ hơn giờ dự kiến.
+                    // KHÔNG tự động kéo giờ lên sớm (pull backward) nếu dịch vụ trước kết thúc sớm.
+                    calculatedStart = currentMaxEndStr > origStart ? currentMaxEndStr : origStart;
                 }
             }
 
