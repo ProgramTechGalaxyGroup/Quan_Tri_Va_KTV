@@ -15,7 +15,7 @@ export default function SupportDashboard() {
         markRoomDone, markTaskDone, refreshRooms, refreshTasks
     } = useSupportDashboard();
 
-    const [activeTab, setActiveTab] = useState<'ROOMS' | 'TASKS'>('ROOMS');
+    const [activeTab, setActiveTab] = useState<'ROOMS' | 'TASKS'>('TASKS');
     const [selectedItem, setSelectedItem] = useState<{ id: string, type: 'ROOM' | 'TASK' } | null>(null);
 
     // Camera states
@@ -119,7 +119,7 @@ export default function SupportDashboard() {
     return (
         <AppLayout title="Hậu Cần Dashboard">
             <div className="max-w-3xl mx-auto p-4 pb-24">
-                {/* Tabs */}
+                {/* Tabs - Tạm ẩn phần Phòng Cần Dọn theo yêu cầu
                 <div className="flex bg-white rounded-xl shadow-sm p-1 mb-6 border border-slate-100">
                     <button
                         onClick={() => setActiveTab('ROOMS')}
@@ -152,6 +152,7 @@ export default function SupportDashboard() {
                         )}
                     </button>
                 </div>
+                */}
 
                 {/* Content */}
                 <AnimatePresence mode="wait">
