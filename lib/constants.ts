@@ -27,6 +27,8 @@ export const MODULES: ModuleDefinition[] = [
   { id: 'device_management', name: 'Thiết Bị', group: 'Hệ Thống' },
   { id: 'staff_features', name: 'Quản Lý Tính Năng', group: 'Hệ Thống' },
   { id: 'notification_settings', name: 'Cài Đặt Thông Báo', group: 'Hệ Thống' },
+  { id: 'support_dashboard', name: 'Hậu Cần Dashboard', group: 'Hậu Cần' },
+  { id: 'support_tasks_admin', name: 'Giao Việc Hậu Cần', group: 'Hậu Cần' },
   { id: 'settings', name: 'Cài Đặt', group: 'Hệ Thống' },
 ];
 

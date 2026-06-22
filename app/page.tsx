@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 // 🔧 SYSTEM CONFIGURATION
 const SYSTEM_CONFIG = {
@@ -39,17 +39,22 @@ export default function HomePage() {
   }, []);
 
   const isKTV = role?.id === 'ktv';
+  const isSupport = role?.id === 'support';
   const router = useRouter();
 
   useEffect(() => {
     if (mounted && isKTV) {
       router.push('/ktv/dashboard');
+    } else if (mounted && isSupport) {
+      router.push('/support/dashboard');
+    } else if (false) {
+      router.push('/ktv/dashboard');
     }
-  }, [mounted, isKTV, router]);
+  }, [mounted, isKTV, isSupport, router]);
 
   if (!mounted) return null;
 
-  if (isKTV) {
+  if (isKTV || isSupport) {
     return (
       <AppLayout title="Dashboard">
         <div className="min-h-[80vh] flex flex-col items-center justify-center bg-[#FDFBF7]">

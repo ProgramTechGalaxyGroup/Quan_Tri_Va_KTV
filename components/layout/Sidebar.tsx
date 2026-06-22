@@ -28,6 +28,7 @@ import {
   History,
   ListOrdered,
   BookOpen,
+  ClipboardCheck,
   Home,
   ChevronLeft,
   ChevronRight,
@@ -70,8 +71,10 @@ const ICONS: Record<string, React.ReactNode> = {
   device_management: <Tablet size={20} />,
   room_management: <DoorOpen size={20} />,
   staff_notifications: <Bell size={20} />,
-  staff_features: <ToggleLeft size={20} />,
-  notification_settings: <Bell size={20} />,
+  staff_features: <Settings size={20} />,
+  notification_settings: <Settings size={20} />,
+  support_dashboard: <LayoutDashboard size={20} />,
+  support_tasks_admin: <ClipboardCheck size={20} />,
   settings: <Settings size={20} />,
 };
 
@@ -105,6 +108,8 @@ const PATHS: Record<string, string> = {
   staff_notifications: '/admin/notifications',
   staff_features: '/admin/settings/features',
   notification_settings: '/admin/settings/notifications',
+  support_dashboard: '/support/dashboard',
+  support_tasks_admin: '/admin/support-tasks',
   settings: '/settings',
 };
 

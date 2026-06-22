@@ -505,3 +505,36 @@
 | `user_agent` | text | Trình duyệt / Thiết bị |
 | `details` | jsonb | Thông tin chi tiết thêm |
 | `created_at` | timestamptz | Thời điểm xảy ra |
+
+
+## NHÓM 8: HẬU CẦN (Support)
+
+### 20. SupportTaskTemplates
+**Nhiệm vụ**: Danh sách công việc mẫu cho Hậu Cần.
+| Cột | Kiểu | Ghi chú |
+|-----|------|---------|
+| id | uuid PK | Mã việc mẫu |
+| task_name | text | Tên việc (VD: Dọn rác) |
+| created_at | timestamptz | |
+
+### 21. SupportAreas
+**Nhiệm vụ**: Khu vực cần dọn.
+| Cột | Kiểu | Ghi chú |
+|-----|------|---------|
+| id | uuid PK | Mã khu vực |
+| area_name | text | Tên khu vực |
+
+### 22. SupportTasks
+**Nhiệm vụ**: Lịch sử công việc đã giao cho Hậu cần.
+| Cột | Kiểu | Ghi chú |
+|-----|------|---------|
+| id | uuid PK | |
+| task_id | uuid FK | Liên kết SupportTaskTemplates |
+| task_name | text | Tên việc |
+| assignee_id | text FK | NV Hậu cần (Staff) |
+| area_id | uuid FK | Liên kết SupportAreas |
+| status | text | PENDING, DONE |
+| photo_url | text | Ảnh minh chứng |
+| created_by | text FK | Admin giao việc |
+| created_at | timestamptz | |
+| completed_at | timestamptz | |

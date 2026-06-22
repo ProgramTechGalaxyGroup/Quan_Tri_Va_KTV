@@ -28,6 +28,8 @@ export type ModuleId =
   | 'room_management'
   | 'staff_features'
   | 'notification_settings'
+  | 'support_dashboard'
+  | 'support_tasks_admin'
   | 'settings';
 
 export interface ModuleDefinition {
