@@ -31,20 +31,50 @@ ALTER TABLE "SupportAreas" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "SupportTasks" ENABLE ROW LEVEL SECURITY;
 
 -- Policies
+-- Policies cho SupportTaskTemplates
+DROP POLICY IF EXISTS "Allow authenticated users to read SupportTaskTemplates" ON "SupportTaskTemplates";
 CREATE POLICY "Allow authenticated users to read SupportTaskTemplates" ON "SupportTaskTemplates" FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Allow authenticated users to insert SupportTaskTemplates" ON "SupportTaskTemplates";
 CREATE POLICY "Allow authenticated users to insert SupportTaskTemplates" ON "SupportTaskTemplates" FOR INSERT TO authenticated WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow authenticated users to update SupportTaskTemplates" ON "SupportTaskTemplates";
 CREATE POLICY "Allow authenticated users to update SupportTaskTemplates" ON "SupportTaskTemplates" FOR UPDATE TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Allow authenticated users to delete SupportTaskTemplates" ON "SupportTaskTemplates";
 CREATE POLICY "Allow authenticated users to delete SupportTaskTemplates" ON "SupportTaskTemplates" FOR DELETE TO authenticated USING (true);
 
+-- Policies cho SupportAreas
+DROP POLICY IF EXISTS "Allow authenticated users to read SupportAreas" ON "SupportAreas";
 CREATE POLICY "Allow authenticated users to read SupportAreas" ON "SupportAreas" FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Allow authenticated users to insert SupportAreas" ON "SupportAreas";
 CREATE POLICY "Allow authenticated users to insert SupportAreas" ON "SupportAreas" FOR INSERT TO authenticated WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow authenticated users to update SupportAreas" ON "SupportAreas";
 CREATE POLICY "Allow authenticated users to update SupportAreas" ON "SupportAreas" FOR UPDATE TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Allow authenticated users to delete SupportAreas" ON "SupportAreas";
 CREATE POLICY "Allow authenticated users to delete SupportAreas" ON "SupportAreas" FOR DELETE TO authenticated USING (true);
 
+-- Policies cho SupportTasks
+DROP POLICY IF EXISTS "Allow authenticated users to read SupportTasks" ON "SupportTasks";
 CREATE POLICY "Allow authenticated users to read SupportTasks" ON "SupportTasks" FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Allow authenticated users to insert SupportTasks" ON "SupportTasks";
 CREATE POLICY "Allow authenticated users to insert SupportTasks" ON "SupportTasks" FOR INSERT TO authenticated WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow authenticated users to update SupportTasks" ON "SupportTasks";
 CREATE POLICY "Allow authenticated users to update SupportTasks" ON "SupportTasks" FOR UPDATE TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Allow authenticated users to delete SupportTasks" ON "SupportTasks";
 CREATE POLICY "Allow authenticated users to delete SupportTasks" ON "SupportTasks" FOR DELETE TO authenticated USING (true);
 
--- Bật Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE "SupportTasks";
+-- Bật Realtime cho SupportTasks
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE "SupportTasks";
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Bảng SupportTasks đã nằm trong supabase_realtime publication, bỏ qua...';
+END;
+$$;
