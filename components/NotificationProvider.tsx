@@ -378,7 +378,14 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             }
 
             // Check 1: Role in allowed_roles?
-            const roleAllowed = rule?.allowed_roles?.includes(roleId) ?? false;
+            let roleAllowed = rule?.allowed_roles?.includes(roleId) ?? false;
+
+            // 🔹 PHÂN QUYỀN THEO MODULE (DYNAMIC ROLES):
+            // Nếu user có module quản lý nhưng base role là ktv/support, vẫn cho phép nhận thông báo của admin/reception
+            const hasManagerModule = role?.permissions?.some(p => ['staff_notifications', 'ktv_hub', 'dispatch_board'].includes(p));
+            if (hasManagerModule && rule?.allowed_roles?.some((r: string) => ['admin', 'reception', 'branch_manager'].includes(r))) {
+                roleAllowed = true;
+            }
 
             // Check 2: Is target employee? (employeeId matches current user)
             const isTargetEmployee = rule?.include_target_employee !== false
@@ -404,24 +411,29 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 }
             }
 
-            // Fallback for legacy types without rules: use old logic
+            // Fallback for legacy types without rules: use old logic (NHƯNG ĐÃ ĐƯỢC LÀM CHẶT CHẼ HƠN)
             if (!rule) {
                 // Hardcode safety for KTV specific notifications
                 if (notifType === 'KTV_NEW_ORDER' || notifType === 'REWARD') {
                     if (!isKtv || newNotif.employeeId !== user.id) return;
                 }
 
-                if (roleId === 'admin') {
-                    const isGlobal = !newNotif.employeeId;
-                    const isComplaint = notifType === 'COMPLAINT';
-                    if (!isGlobal && !isComplaint) return;
-                } else if (isKtv) {
-                    if (newNotif.employeeId !== user.id) return;
-                } else if (isReception && newNotif.employeeId) {
-                    return;
-                } else if (newNotif.employeeId && newNotif.employeeId !== user.id) {
-                    // Catch-all safety for other roles (Manager, Dev)
-                    return;
+                const isGlobal = !newNotif.employeeId;
+                const isPersonal = newNotif.employeeId === user.id;
+
+                if (isGlobal) {
+                    // Global notifications: Chỉ những người có role quản lý hoặc module quản lý mới được xem
+                    const canSeeGlobal = roleId === 'admin' || roleId === 'dev' || roleId === 'reception' || roleId === 'branch_manager' || hasManagerModule;
+                    if (!canSeeGlobal) return;
+                } else {
+                    if (!isPersonal) {
+                        // Targeted notification for someone else
+                        if (notifType === 'COMPLAINT' && (roleId === 'admin' || roleId === 'reception' || hasManagerModule)) {
+                            // Cho phép admin/lễ tân xem complaint của người khác
+                        } else {
+                            return; // Chặn không cho xem thông báo cá nhân của người khác
+                        }
+                    }
                 }
             }
 
