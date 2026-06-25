@@ -7,6 +7,7 @@
 
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { createNotification } from '@/lib/notification-helper';
+import { sendBookingConfirmationEmail } from '@/lib/email';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -205,7 +206,7 @@ export async function confirmWebBooking(bookingId: string) {
     // Lấy thông tin hiện tại để map sang loại tương ứng và gửi thông báo KTV
     const { data: bData } = await supabase
       .from('Bookings')
-      .select('source, technicianCode, roomName, bedId, billCode')
+      .select('source, technicianCode, roomName, bedId, billCode, customerName, customerEmail, customerLang, customerPhone')
       .eq('id', bookingId)
       .single();
 
@@ -250,6 +251,60 @@ export async function confirmWebBooking(bookingId: string) {
                 type: 'KTV_NEW_ORDER',
                 message: ktvMsg,
             });
+        }
+    }
+
+    // 3. Gửi email xác nhận kèm mã QR nếu có email
+    if (bData?.customerEmail) {
+        // Kiểm tra xem khách cũ hay mới dựa trên cấu hình "ngưỡng tin cậy"
+        let isNewCustomer = true;
+        if (bData.customerPhone) {
+            // 1. Kiểm tra "Blacklist": Khách có từng bùng kèo (CANCELLED) lần nào chưa?
+            const { data: cancelledBookings } = await supabase
+              .from('Bookings')
+              .select('id')
+              .eq('customerPhone', bData.customerPhone)
+              .eq('status', 'CANCELLED')
+              .limit(1);
+
+            // Nếu KHÔNG CÓ lịch sử hủy kèo, mới bắt đầu xét uy tín
+            if (!cancelledBookings || cancelledBookings.length === 0) {
+                // 2. Lấy cấu hình số lượng đơn tối thiểu để thành khách VIP (mặc định 1)
+                const { data: configData } = await supabase
+                   .from('SystemConfigs')
+                   .select('value')
+                   .eq('key', 'web_booking_trusted_threshold')
+                   .maybeSingle();
+                
+                const threshold = parseInt(configData?.value || '1', 10);
+
+                // 3. Tìm đúng N đơn Web trước đó của SĐT này (tối ưu hóa bằng LIMIT)
+                const { data: pastBookings } = await supabase
+                  .from('Bookings')
+                  .select('id')
+                  .eq('customerPhone', bData.customerPhone)
+                  .eq('isWebBooking', true)
+                  .neq('status', 'CANCELLED') // Không tính những đơn web bị hủy vào quota
+                  .neq('id', bookingId) // Loại trừ đơn hiện tại
+                  .limit(threshold);
+                
+                // 4. Nếu khách có đủ số đơn yêu cầu, họ được tính là khách cũ (không cần cọc)
+                if (pastBookings && pastBookings.length >= threshold) {
+                    isNewCustomer = false;
+                }
+            }
+        }
+
+        // Gọi hàm gửi email (BẮT BUỘC CÓ AWAIT trên Vercel/Serverless để hàm không bị ngắt giữa chừng)
+        try {
+            await sendBookingConfirmationEmail(
+                bData.customerEmail,
+                bData.customerName || 'Quý khách',
+                bData.customerLang || 'vi',
+                isNewCustomer
+            );
+        } catch (err) {
+            console.error('[WebBooking] Lỗi khi gửi email xác nhận:', err);
         }
     }
 
