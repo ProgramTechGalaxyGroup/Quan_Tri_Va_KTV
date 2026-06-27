@@ -463,10 +463,18 @@ export async function GET(request: Request) {
         const hourMap: Record<number, number> = {};
         completedBookings.forEach(b => {
             const time = b.createdAt || b.bookingDate || '';
-            const match = time.match(/(\d{2}):\d{2}/);
-            if (match) {
-                const hour = parseInt(match[1], 10);
-                hourMap[hour] = (hourMap[hour] || 0) + 1;
+            if (time) {
+                const d = new Date(time);
+                if (!isNaN(d.getTime())) {
+                    const vnHourStr = new Intl.DateTimeFormat('en-US', {
+                        hour: '2-digit',
+                        hour12: false,
+                        timeZone: 'Asia/Ho_Chi_Minh'
+                    }).format(d);
+                    let hour = parseInt(vnHourStr, 10);
+                    if (hour === 24) hour = 0;
+                    hourMap[hour] = (hourMap[hour] || 0) + 1;
+                }
             }
         });
         const peakHours = Array.from({ length: 24 }, (_, h) => ({
