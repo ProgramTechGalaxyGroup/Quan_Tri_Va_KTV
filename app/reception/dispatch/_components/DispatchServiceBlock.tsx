@@ -202,7 +202,7 @@ export const DispatchServiceBlock = ({
                     </div>
 
                     {/* Staff Selection Area — ẩn cho dịch vụ phụ phí (phòng riêng) */}
-                    {svc.duration > 0 && !(svc as any).isUtility && (
+                    {!(svc as any).isUtility && (
                         <div className="space-y-4">
                             <div className="flex items-center justify-between px-1">
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
