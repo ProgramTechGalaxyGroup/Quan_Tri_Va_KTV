@@ -14,6 +14,9 @@ export const t = {
       totalLate: 'Số Lần Đi Trễ',
       totalSuddenOff: 'Nghỉ Đột Xuất',
       totalLeave: 'Nghỉ Có Phép',
+      freeShifts: 'Ca Tự Do',
+      requestShifts: 'Ca Yêu Cầu',
+      forgotCheckOut: 'Quên Check-out',
     },
     table: {
       date: 'Ngày',
@@ -30,6 +33,16 @@ export const t = {
       off: 'Nghỉ phép',
       suddenOff: 'Nghỉ đột xuất',
       absent: 'Vắng mặt',
+      free: 'Tự do',
+      request: 'Yêu cầu',
+    },
+    shifts: {
+      SHIFT_1: 'Ca 1',
+      SHIFT_2: 'Ca 2',
+      SHIFT_3: 'Ca 3',
+      FREE: 'Tự do',
+      REQUEST: 'Yêu cầu',
+      OFF: 'OFF',
     }
   },
   en: {
@@ -46,6 +59,9 @@ export const t = {
       totalLate: 'Late Count',
       totalSuddenOff: 'Sudden Off',
       totalLeave: 'Approved Leave',
+      freeShifts: 'Free Shifts',
+      requestShifts: 'Request Shifts',
+      forgotCheckOut: 'Forgot Check-out',
     },
     table: {
       date: 'Date',
@@ -62,6 +78,16 @@ export const t = {
       off: 'Leave',
       suddenOff: 'Sudden Off',
       absent: 'Absent',
+      free: 'Free',
+      request: 'Request',
+    },
+    shifts: {
+      SHIFT_1: 'Shift 1',
+      SHIFT_2: 'Shift 2',
+      SHIFT_3: 'Shift 3',
+      FREE: 'Free',
+      REQUEST: 'Request',
+      OFF: 'OFF',
     }
   }
 };
