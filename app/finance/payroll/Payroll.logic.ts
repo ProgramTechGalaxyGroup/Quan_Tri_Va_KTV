@@ -212,7 +212,8 @@ export const usePayrollLogic = () => {
           }
         } else {
           // No attendance and no leave request
-          if (isPastGracePeriod) {
+          const isFlexibleShift = shiftType === 'FREE' || shiftType === 'REQUEST';
+          if (isPastGracePeriod && !isFlexibleShift) {
               status = 'suddenOff';
           } else {
               status = 'absent';
