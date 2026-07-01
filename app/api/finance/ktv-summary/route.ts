@@ -173,12 +173,14 @@ export async function GET(request: Request) {
         const { data: realtimeWithdrawals } = await supabase
             .from('KTVWithdrawals')
             .select('staff_id, amount, status')
+            .or('wallet_type.eq.TUA,wallet_type.is.null')
             .gte('request_date', GLOBAL_START_DATE_ISO);
 
         const { data: pendingWithdrawals } = await supabase
             .from('KTVWithdrawals')
             .select('staff_id, amount, note')
             .eq('status', 'PENDING')
+            .or('wallet_type.eq.TUA,wallet_type.is.null')
             .gte('request_date', GLOBAL_START_DATE_ISO);
 
         // 5. Calculate per KTV
