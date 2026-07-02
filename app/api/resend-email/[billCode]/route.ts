@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { sendBookingConfirmationEmail } from '@/lib/email';
 
-export async function GET(request: Request, context: { params: Promise<{ billCode: string }> | { billCode: string } }) {
+export async function GET(request: Request, context: { params: Promise<{ billCode: string }> }) {
   try {
     const supabase = getSupabaseAdmin();
     if (!supabase) throw new Error('Supabase admin not initialized');
