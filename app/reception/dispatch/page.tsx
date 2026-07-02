@@ -1732,9 +1732,13 @@ if (!hasPermission('dispatch_board')) {
                           #{order.billCode} {subOrder.services.length < order.services.length && '(Tách)'}
                         </span>
                         {order.hasVat && <span className="shrink-0 px-1.5 py-0.5 rounded text-[8px] font-black bg-blue-50 text-blue-600 border border-blue-100" title="Khách yêu cầu xuất hoá đơn VAT">VAT</span>}
-                        {order.isWebBooking && (
+                        {order.isWebBooking ? (
                           <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-50 text-amber-600 border border-amber-100 uppercase" title="Đơn từ Web Booking">
                             BOOKING {order.timeBooking ? order.timeBooking : ''}
+                          </span>
+                        ) : (
+                          <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-black bg-slate-50 text-slate-500 border border-slate-200 uppercase" title="Đơn khách vãng lai">
+                            WALK IN {order.timeBooking ? order.timeBooking : ''}
                           </span>
                         )}
                       </div>
@@ -1790,9 +1794,13 @@ if (!hasPermission('dispatch_board')) {
                         [selectedSubOrder.originalOrder.phone, selectedSubOrder.originalOrder.email].filter(Boolean).join(' — ') || '....'
                       }
                     </h2>
-                    {selectedSubOrder.originalOrder.isWebBooking && (
+                    {selectedSubOrder.originalOrder.isWebBooking ? (
                       <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-black bg-amber-50 text-amber-600 border border-amber-100 uppercase ml-2" title="Đơn từ Web Booking">
                         BOOKING {selectedSubOrder.originalOrder.timeBooking ? selectedSubOrder.originalOrder.timeBooking : ''}
+                      </span>
+                    ) : (
+                      <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-black bg-slate-50 text-slate-500 border border-slate-200 uppercase ml-2" title="Đơn khách vãng lai">
+                        WALK IN {selectedSubOrder.originalOrder.timeBooking ? selectedSubOrder.originalOrder.timeBooking : ''}
                       </span>
                     )}
                   </div>
