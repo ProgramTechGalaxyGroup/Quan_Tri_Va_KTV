@@ -519,6 +519,8 @@ export default function DispatchBoardPage() {
               vipConfidence: b.notes && typeof b.notes === 'string' && b.notes.trim().startsWith('{') ? (() => { try { const p = JSON.parse(b.notes); return p.type === 'VIP_APPOINTMENT' ? p.confidence : undefined; } catch { return undefined; } })() : undefined,
               timeStart: b.timeStart || null,
               rawNotes: b.notes,
+              isWebBooking: b.isWebBooking,
+              timeBooking: b.timeBooking,
             services: (b.BookingItems || []).map((bi: any) => {
               const itemTurns = assignedTurns.filter((t: any) => {
                   if (!t.booking_item_id) return false;
@@ -1725,11 +1727,16 @@ if (!hasPermission('dispatch_board')) {
                     className={`bg-white p-5 rounded-3xl border-2 cursor-pointer transition-all active:scale-[0.98] relative ${selectedSubOrderId === subOrder.id ? 'border-indigo-600 shadow-2xl shadow-indigo-100 ring-4 ring-indigo-50/50' : 'border-transparent shadow-sm hover:border-indigo-100 hover:shadow-lg'}`}
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg tracking-wider">
                           #{order.billCode} {subOrder.services.length < order.services.length && '(Tách)'}
                         </span>
                         {order.hasVat && <span className="shrink-0 px-1.5 py-0.5 rounded text-[8px] font-black bg-blue-50 text-blue-600 border border-blue-100" title="Khách yêu cầu xuất hoá đơn VAT">VAT</span>}
+                        {order.isWebBooking && (
+                          <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-50 text-amber-600 border border-amber-100 uppercase" title="Đơn từ Web Booking">
+                            BOOKING {order.timeBooking ? order.timeBooking : ''}
+                          </span>
+                        )}
                       </div>
                       <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1.5"><Clock size={12} className="text-gray-300" /> {getEstimatedEndTime(order, subOrder.services) || order.time}</span>
                     </div>
@@ -1777,12 +1784,17 @@ if (!hasPermission('dispatch_board')) {
               {selectedSubOrder ? (
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
-                    <h2 className="font-black text-gray-900 text-base truncate">
+                    <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse shrink-0" />
+                    <h2 className="font-black text-gray-900 text-base truncate flex-1">
                       Đơn {selectedSubOrder.originalOrder.billCode} — {selectedSubOrder.originalOrder.customerName} — {
                         [selectedSubOrder.originalOrder.phone, selectedSubOrder.originalOrder.email].filter(Boolean).join(' — ') || '....'
                       }
                     </h2>
+                    {selectedSubOrder.originalOrder.isWebBooking && (
+                      <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-black bg-amber-50 text-amber-600 border border-amber-100 uppercase ml-2" title="Đơn từ Web Booking">
+                        BOOKING {selectedSubOrder.originalOrder.timeBooking ? selectedSubOrder.originalOrder.timeBooking : ''}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 mt-1 ml-4">
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Đang điều phối</p>
