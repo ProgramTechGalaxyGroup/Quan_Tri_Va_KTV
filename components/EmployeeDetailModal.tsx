@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, User, Phone, Mail, CreditCard, Calendar, Ruler, Weight, Award, CheckCircle2, Briefcase, Edit2, Save, GraduationCap, Zap, BookOpen, Key } from 'lucide-react';
-import { Employee, SkillLevel } from '@/lib/mock-db';
-import Image from 'next/image';
+import { X, User, Phone, Mail, CreditCard, Calendar, Ruler, Weight, Award, CheckCircle2, Briefcase, Edit2, Save, GraduationCap, Zap, BookOpen, Key, Loader2 } from 'lucide-react';
+import { Employee, SkillLevel } from '@/lib/types';
+import { updateStaffMember } from '@/app/admin/employees/actions';
 
 interface EmployeeDetailModalProps {
   employee: Employee | null;
@@ -15,6 +15,7 @@ interface EmployeeDetailModalProps {
 
 export function EmployeeDetailModal({ employee, isOpen, onClose, onUpdate }: EmployeeDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editedEmployee, setEditedEmployee] = useState<Employee | null>(employee);
 
   React.useEffect(() => {
@@ -25,31 +26,45 @@ export function EmployeeDetailModal({ employee, isOpen, onClose, onUpdate }: Emp
 
   const toggleSkill = (skillKey: keyof Employee['skills']) => {
     if (!isEditing) return;
-    const levels: SkillLevel[] = ['none', 'basic', 'expert', 'training'];
 
     setEditedEmployee(prev => {
       if (!prev) return null;
-      const currentLevel = prev.skills[skillKey];
-      const currentIndex = levels.indexOf(currentLevel);
-      const nextIndex = (currentIndex + 1) % levels.length;
-      const nextLevel = levels[nextIndex];
+
+      const rawLevel = prev.skills?.[skillKey];
+      const isCurrentlySkilled = rawLevel === true || (rawLevel as any) === 'basic' || (rawLevel as any) === 'expert' || (rawLevel as any) === 'training';
 
       return {
         ...prev,
         skills: {
           ...prev.skills,
-          [skillKey]: nextLevel
+          [skillKey]: !isCurrentlySkilled
         }
       };
     });
   };
 
-  const handleSave = () => {
-    if (onUpdate && editedEmployee) {
-      onUpdate(editedEmployee);
+  const handleSave = async () => {
+    if (!editedEmployee) return;
+    setIsSaving(true);
+    console.log('[EmployeeDetailModal] Saving...', editedEmployee.id, { skills: editedEmployee.skills });
+    try {
+      // Call server action to persist to DB
+      const result = await updateStaffMember(editedEmployee.id, editedEmployee);
+      console.log('[EmployeeDetailModal] Save result:', result);
+      if (result.success) {
+        // Update local state in parent
+        if (onUpdate) onUpdate(editedEmployee);
+        setIsEditing(false);
+        alert('✅ Đã lưu thành công!');
+      } else {
+        alert(`❌ Lỗi khi lưu: ${result.error}`);
+      }
+    } catch (err: any) {
+      console.error('[EmployeeDetailModal] Save error:', err);
+      alert(`❌ Lỗi hệ thống: ${err.message}`);
+    } finally {
+      setIsSaving(false);
     }
-    setIsEditing(false);
-    alert('Đã cập nhật thông tin nhân viên thành công!');
   };
 
   const updateField = (field: keyof Employee, value: any) => {
@@ -63,7 +78,8 @@ export function EmployeeDetailModal({ employee, isOpen, onClose, onUpdate }: Emp
     hairCut: 'Cắt Tóc',
     shampoo: 'Gội đầu',
     hairExtensionShampoo: 'Gội Tóc Nối',
-    earCleaning: 'Ráy Tai',
+    earCombo: 'Ráy Combo',
+    earChuyen: 'Ráy Chuyên',
     machineShave: 'Cạo Máy',
     razorShave: 'Cạo Dao',
     facial: 'Facial',
@@ -72,18 +88,16 @@ export function EmployeeDetailModal({ employee, isOpen, onClose, onUpdate }: Emp
     oilBody: 'Body Dầu',
     hotStoneBody: 'Body Đá Nóng',
     scrubBody: 'Scrub Body',
-    oilFoot: 'Foot Dầu',
-    hotStoneFoot: 'Foot Đá Nóng',
-    acupressureFoot: 'Foot ấn huyệt',
+    bodyMix: 'Body Mix',
+    foot: 'Foot',
     heelScrub: 'Bào Gót',
-    maniPedi: 'Manicure + Pedicure',
+    nailCombo: 'Nail Combo',
+    nailChuyen: 'Nail Chuyên',
   };
 
-  const levelInfo: Record<SkillLevel, { label: string, color: string, icon: React.ReactNode }> = {
-    none: { label: 'Chưa có', color: 'text-gray-400 bg-gray-50 border-gray-100 opacity-50', icon: <X size={12} /> },
-    basic: { label: 'Cơ bản', color: 'text-blue-700 bg-blue-50 border-blue-100', icon: <BookOpen size={12} /> },
-    expert: { label: 'Chuyên', color: 'text-emerald-700 bg-emerald-50 border-emerald-100', icon: <Zap size={12} /> },
-    training: { label: 'Đào tạo', color: 'text-amber-700 bg-amber-50 border-amber-100', icon: <GraduationCap size={12} /> },
+  const levelInfo: Record<string, { label: string, color: string, icon: React.ReactNode }> = {
+    'false': { label: 'Chưa có', color: 'text-gray-400 bg-gray-50 border-gray-100 opacity-50', icon: <X size={12} /> },
+    'true': { label: 'Có tay nghề', color: 'text-emerald-700 bg-emerald-50 border-emerald-100', icon: <CheckCircle2 size={12} /> },
   };
 
   return (
@@ -96,10 +110,11 @@ export function EmployeeDetailModal({ employee, isOpen, onClose, onUpdate }: Emp
               {isEditing ? (
                 <button
                   onClick={handleSave}
-                  className="p-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-colors shadow-lg flex items-center gap-2 px-4"
+                  disabled={isSaving}
+                  className={`p-2 text-white rounded-full transition-colors shadow-lg flex items-center gap-2 px-4 ${isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600'}`}
                 >
-                  <Save size={18} />
-                  <span className="text-sm font-bold">Lưu</span>
+                  {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                  <span className="text-sm font-bold">{isSaving ? 'Đang lưu...' : 'Lưu'}</span>
                 </button>
               ) : (
                 <button
@@ -119,11 +134,10 @@ export function EmployeeDetailModal({ employee, isOpen, onClose, onUpdate }: Emp
             </div>
             <div className="absolute -bottom-12 left-8">
               <div className="relative w-24 h-24 rounded-2xl overflow-hidden border-4 border-white shadow-lg bg-gray-100">
-                <Image
+                <img
                   src={employee.photoUrl}
                   alt={employee.name}
-                  fill
-                  className="object-cover"
+                  className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
               </div>
@@ -164,6 +178,30 @@ export function EmployeeDetailModal({ employee, isOpen, onClose, onUpdate }: Emp
                   <InfoItem label="Số CCCD" value={editedEmployee.idCard} isEditing={isEditing} onChange={(val) => updateField('idCard', val)} />
                   <InfoItem label="Chiều cao" value={editedEmployee.height} icon={<Ruler size={14} />} isEditing={isEditing} onChange={(val) => updateField('height', val)} />
                   <InfoItem label="Cân nặng" value={editedEmployee.weight} icon={<Weight size={14} />} isEditing={isEditing} onChange={(val) => updateField('weight', val)} />
+
+                  {isEditing ? (
+                    <div className="space-y-3 mt-4 pt-4 border-t border-gray-100">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={editedEmployee.isActiveVipMenu || false} onChange={(e) => updateField('isActiveVipMenu', e.target.checked)} className="w-4 h-4 text-indigo-600 rounded" />
+                        <span className="text-sm font-medium text-gray-700">Hiển thị trên VIP Menu</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={editedEmployee.isHomeSpa || false} onChange={(e) => updateField('isHomeSpa', e.target.checked)} className="w-4 h-4 text-indigo-600 rounded" />
+                        <span className="text-sm font-medium text-gray-700">Đi Home Spa</span>
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 mt-4 pt-4 border-t border-gray-100">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-500">VIP Menu:</span>
+                        <span className="text-sm font-medium text-gray-900">{editedEmployee.isActiveVipMenu ? 'Có' : 'Không'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-500">Home Spa:</span>
+                        <span className="text-sm font-medium text-gray-900">{editedEmployee.isHomeSpa ? 'Có' : 'Không'}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -210,20 +248,19 @@ export function EmployeeDetailModal({ employee, isOpen, onClose, onUpdate }: Emp
                 )}
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {(Object.entries(editedEmployee.skills) as [keyof Employee['skills'], SkillLevel][]).map(([key, level]) => {
-                  const info = levelInfo[level];
+                {(Object.keys(skillLabels) as (keyof Employee['skills'])[]).map((key) => {
+                  const rawLevel = editedEmployee.skills?.[key];
+                  const isSkilled = rawLevel === true || (rawLevel as any) === 'basic' || (rawLevel as any) === 'expert' || (rawLevel as any) === 'training';
+                  const info = levelInfo[String(isSkilled)];
                   return (
                     <button
                       key={key}
                       onClick={() => toggleSkill(key)}
                       disabled={!isEditing}
-                      className={`flex flex-col gap-1 p-2 rounded-lg border text-left transition-all ${info.color} ${isEditing ? 'hover:border-indigo-400 hover:shadow-sm cursor-pointer' : 'cursor-default'}`}
+                      className={`flex items-center justify-between p-2.5 rounded-lg border text-left transition-all ${info.color} ${isEditing ? 'hover:border-indigo-400 hover:shadow-sm cursor-pointer' : 'cursor-default'}`}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="text-xs font-bold truncate">{skillLabels[key]}</span>
-                        {info.icon}
-                      </div>
-                      <span className="text-[10px] font-medium uppercase tracking-wider opacity-80">{info.label}</span>
+                      <span className="text-xs font-bold truncate">{skillLabels[key]}</span>
+                      {info.icon}
                     </button>
                   );
                 })}
