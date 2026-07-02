@@ -519,7 +519,7 @@ export default function DispatchBoardPage() {
               vipConfidence: b.notes && typeof b.notes === 'string' && b.notes.trim().startsWith('{') ? (() => { try { const p = JSON.parse(b.notes); return p.type === 'VIP_APPOINTMENT' ? p.confidence : undefined; } catch { return undefined; } })() : undefined,
               timeStart: b.timeStart || null,
               rawNotes: b.notes,
-              isWebBooking: b.isWebBooking,
+              isWebBooking: b.source === 'WEB_BOOKING' || (b.notes && typeof b.notes === 'string' && b.notes.trim().startsWith('{') ? (() => { try { const p = JSON.parse(b.notes); return p.type === 'WEB_ADVANCE_BOOKING'; } catch { return false; } })() : false),
               timeBooking: b.timeBooking,
             services: (b.BookingItems || []).map((bi: any) => {
               const itemTurns = assignedTurns.filter((t: any) => {
